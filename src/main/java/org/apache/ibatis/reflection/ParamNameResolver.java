@@ -112,26 +112,33 @@ public class ParamNameResolver {
    * A single non-special parameter is returned without a name. Multiple parameters are named using the naming rule. In
    * addition to the default names, this method also adds the generic names (param1, param2, ...).
    * </p>
+   * <p>
+   * 经过这个方法处理之后，返回值要不就是 null；要不就是非 Collection 非 Array 的对象；要不就是 ParamMap
    *
-   * @param args
-   *          the args
-   *
+   * @param args the args
    * @return the named params
    */
   public Object getNamedParams(Object[] args) {
+    // 没有参数，就返回 null
     final int paramCount = names.size();
     if (args == null || paramCount == 0) {
       return null;
     }
+
+    // 参数只有 1 个，而且没有注解
     if (!hasParamAnnotation && paramCount == 1) {
       Object value = args[names.firstKey()];
+      // 包装一下如果是多元素
       return wrapToMapIfCollection(value, useActualParamName ? names.get(names.firstKey()) : null);
-    } else {
+    }
+    // 其他情况，要不就是有注解，要不就是多元素
+    else {
       final Map<String, Object> param = new ParamMap<>();
       int i = 0;
       for (Map.Entry<Integer, String> entry : names.entrySet()) {
         param.put(entry.getValue(), args[entry.getKey()]);
         // add generic param names (param1, param2, ...)
+        // 添加一些通用的参数名，比如 param1 param2
         final String genericParamName = GENERIC_NAME_PREFIX + (i + 1);
         // ensure not to overwrite parameter named with @Param
         if (!names.containsValue(genericParamName)) {
@@ -146,31 +153,37 @@ public class ParamNameResolver {
   /**
    * Wrap to a {@link ParamMap} if object is {@link Collection} or array.
    *
-   * @param object
-   *          a parameter object
-   * @param actualParamName
-   *          an actual parameter name (If specify a name, set an object to {@link ParamMap} with specified name)
-   *
+   * @param object          a parameter object
+   * @param actualParamName an actual parameter name (If specify a name, set an object to {@link ParamMap} with specified name)
    * @return a {@link ParamMap}
-   *
    * @since 3.5.5
    */
   public static Object wrapToMapIfCollection(Object object, String actualParamName) {
+    // 看方法名就知道，如果是 collection 就包装成 wrap
+    // 不过这个方法处理的更多，collection 不仅仅是 Java 的集合，如果是 Array 也包装起来
+
+    // 处理 Collection
     if (object instanceof Collection) {
       ParamMap<Object> map = new ParamMap<>();
       map.put("collection", object);
+
+      // 如果刚巧还是个 List，也添加一个 list
       if (object instanceof List) {
         map.put("list", object);
       }
       Optional.ofNullable(actualParamName).ifPresent(name -> map.put(name, object));
       return map;
     }
+
+    // 如果是数组，那么添加一个 array
     if (object != null && object.getClass().isArray()) {
       ParamMap<Object> map = new ParamMap<>();
       map.put("array", object);
       Optional.ofNullable(actualParamName).ifPresent(name -> map.put(name, object));
       return map;
     }
+
+    // 都不是，直接返回
     return object;
   }
 

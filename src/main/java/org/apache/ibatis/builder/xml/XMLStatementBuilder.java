@@ -83,15 +83,21 @@ public class XMLStatementBuilder extends BaseBuilder {
     LanguageDriver langDriver = getLanguageDriver(lang);
 
     // Parse selectKey after includes and remove them.
+    // 处理 <selectKey> 标签
     processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
     // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
     KeyGenerator keyGenerator;
+    // 构造一个所谓的 key statement id。其实就是 statement id 加上一个字符串 "!selectKey"
     String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX;
+    // 然后再加一个命名空间
     keyStatementId = builderAssistant.applyCurrentNamespace(keyStatementId, true);
+    // 这里面应该缓存了大量 key statement id 使用何种 key generator
     if (configuration.hasKeyGenerator(keyStatementId)) {
       keyGenerator = configuration.getKeyGenerator(keyStatementId);
     } else {
+      // 要不就是自己配了 useGeneratedKeys
+      // 要不就是走全局的 use generated keys
       keyGenerator = context.getBooleanAttribute("useGeneratedKeys",
           configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType))
               ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
@@ -127,7 +133,10 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   private void processSelectKeyNodes(String id, Class<?> parameterTypeClass, LanguageDriver langDriver) {
+    // 看起来 selectKey 标签未必只有 1 个，允许多个
     List<XNode> selectKeyNodes = context.evalNodes("selectKey");
+
+    // 如果配置了 databaseId
     if (configuration.getDatabaseId() != null) {
       parseSelectKeyNodes(id, selectKeyNodes, parameterTypeClass, langDriver, configuration.getDatabaseId());
     }
@@ -137,9 +146,14 @@ public class XMLStatementBuilder extends BaseBuilder {
 
   private void parseSelectKeyNodes(String parentId, List<XNode> list, Class<?> parameterTypeClass,
       LanguageDriver langDriver, String skRequiredDatabaseId) {
+
+    // 遍历所有的 <selectKey>
     for (XNode nodeToHandle : list) {
+      // 语句 id + !selectKey ，老规矩
       String id = parentId + SelectKeyGenerator.SELECT_KEY_SUFFIX;
       String databaseId = nodeToHandle.getStringAttribute("databaseId");
+
+      // databaseId 匹配
       if (databaseIdMatchesCurrent(id, databaseId, skRequiredDatabaseId)) {
         parseSelectKeyNode(id, nodeToHandle, parameterTypeClass, langDriver, databaseId);
       }
@@ -187,17 +201,31 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   private boolean databaseIdMatchesCurrent(String id, String databaseId, String requiredDatabaseId) {
+    // 如果 required 存在，那么比较 required 和 given
     if (requiredDatabaseId != null) {
       return requiredDatabaseId.equals(databaseId);
     }
+
+    // 否则就是 required == null
+
+    // 如果标签自己设置了 databaseId，那么
     if (databaseId != null) {
       return false;
     }
+
+    // 下面就是两个都是 null
+
+    // 既然走到这一步了，就拼接一下 namespace
     id = builderAssistant.applyCurrentNamespace(id, false);
+
+    // 如果之前没有这个语句，新的语句？那么就匹配
     if (!this.configuration.hasStatement(id, false)) {
       return true;
     }
+
     // skip this statement if there is a previous one with a not null databaseId
+    // 之前已经存在这个语句了。怎么回事呢？可能是注解、XML 混合吧
+    // 如果之前没有配，那么优先使用之前的，先来先到
     MappedStatement previous = this.configuration.getMappedStatement(id, false); // issue #2
     return previous.getDatabaseId() == null;
   }

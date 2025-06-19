@@ -318,6 +318,8 @@ public final class MappedStatement {
 
   public BoundSql getBoundSql(Object parameterObject) {
     // 得到 BoundSql，里面的 #{} 的所有参数都已经解析完毕
+    // 其实里面就是一个 String sql
+    // 还有一些 parameter mapping list
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
 
     // 所以，这里才能获取 parameterMappings

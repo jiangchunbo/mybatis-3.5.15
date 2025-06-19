@@ -34,6 +34,7 @@ public class DynamicSqlSource implements SqlSource {
   }
 
   /**
+   * 传递一个被 mybatis wrap 过的参数，得到 BoundSql
    *
    * @param parameterObject 获得参数对象，基本就是 paramMap；集合；单个参数
    */
@@ -43,9 +44,11 @@ public class DynamicSqlSource implements SqlSource {
     DynamicContext context = new DynamicContext(configuration, parameterObject);
 
     // apply 方法将会把节点的结果放入 context
+    // context 最终解析完会得到 String sql 静态字符串
+    // context 里面还有 binding 参数
     rootSqlNode.apply(context);
 
-    //
+    // 解析之后的返回值就是 StaticSqlSource
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
 
     // 参数是 null 就是 Object ？？？！！！这是什么
@@ -55,7 +58,8 @@ public class DynamicSqlSource implements SqlSource {
     SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), parameterType, context.getBindings());
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
 
-    // 可能是那些 <binding> 标签的东西把
+    // 可能是那些 <binding> 标签的东西
+    // 放到额外参数里
     context.getBindings().forEach(boundSql::setAdditionalParameter);
     return boundSql;
   }

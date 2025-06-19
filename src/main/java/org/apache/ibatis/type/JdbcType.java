@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * MyBatis 自己搞得枚举类，其中枚举了许多与 JDBC {@link java.sql.Types} 同名的枚举。
+ *
  * @author Clinton Begin
  */
 public enum JdbcType {
@@ -112,6 +114,7 @@ public enum JdbcType {
   private static final Map<Integer, JdbcType> codeLookup = new HashMap<>();
 
   static {
+    // 注册
     for (JdbcType type : JdbcType.values()) {
       codeLookup.put(type.TYPE_CODE, type);
     }

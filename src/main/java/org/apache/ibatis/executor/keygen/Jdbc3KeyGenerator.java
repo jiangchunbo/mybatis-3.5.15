@@ -44,6 +44,8 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 import org.apache.ibatis.util.MapUtil;
 
 /**
+ * 用于给 Key 字段赋值
+ *
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
@@ -59,7 +61,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
   public static final Jdbc3KeyGenerator INSTANCE = new Jdbc3KeyGenerator();
 
   private static final String MSG_TOO_MANY_KEYS = "Too many keys are generated. There are only %d target objects. "
-      + "You either specified a wrong 'keyProperty' or encountered a driver bug like #1523.";
+    + "You either specified a wrong 'keyProperty' or encountered a driver bug like #1523.";
 
   @Override
   public void processBefore(Executor executor, MappedStatement ms, Statement stmt, Object parameter) {
@@ -91,12 +93,12 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
 
   @SuppressWarnings("unchecked")
   private void assignKeys(Configuration configuration, ResultSet rs, ResultSetMetaData rsmd, String[] keyProperties,
-      Object parameter) throws SQLException {
+                          Object parameter) throws SQLException {
     if (parameter instanceof ParamMap || parameter instanceof StrictMap) {
       // Multi-param or single param with @Param
       assignKeysToParamMap(configuration, rs, rsmd, keyProperties, (Map<String, ?>) parameter);
     } else if (parameter instanceof ArrayList && !((ArrayList<?>) parameter).isEmpty()
-        && ((ArrayList<?>) parameter).get(0) instanceof ParamMap) {
+      && ((ArrayList<?>) parameter).get(0) instanceof ParamMap) {
       // Multi-param or single param with @Param in batch operation
       assignKeysToParamMapList(configuration, rs, rsmd, keyProperties, (ArrayList<ParamMap<?>>) parameter);
     } else {
@@ -106,7 +108,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
   }
 
   private void assignKeysToParam(Configuration configuration, ResultSet rs, ResultSetMetaData rsmd,
-      String[] keyProperties, Object parameter) throws SQLException {
+                                 String[] keyProperties, Object parameter) throws SQLException {
     Collection<?> params = collectionize(parameter);
     if (params.isEmpty()) {
       return;
@@ -126,7 +128,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
   }
 
   private void assignKeysToParamMapList(Configuration configuration, ResultSet rs, ResultSetMetaData rsmd,
-      String[] keyProperties, ArrayList<ParamMap<?>> paramMapList) throws SQLException {
+                                        String[] keyProperties, ArrayList<ParamMap<?>> paramMapList) throws SQLException {
     Iterator<ParamMap<?>> iterator = paramMapList.iterator();
     List<KeyAssigner> assignerList = new ArrayList<>();
     long counter = 0;
@@ -138,8 +140,8 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
       if (assignerList.isEmpty()) {
         for (int i = 0; i < keyProperties.length; i++) {
           assignerList
-              .add(getAssignerForParamMap(configuration, rsmd, i + 1, paramMap, keyProperties[i], keyProperties, false)
-                  .getValue());
+            .add(getAssignerForParamMap(configuration, rsmd, i + 1, paramMap, keyProperties[i], keyProperties, false)
+              .getValue());
         }
       }
       assignerList.forEach(x -> x.assign(rs, paramMap));
@@ -148,16 +150,16 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
   }
 
   private void assignKeysToParamMap(Configuration configuration, ResultSet rs, ResultSetMetaData rsmd,
-      String[] keyProperties, Map<String, ?> paramMap) throws SQLException {
+                                    String[] keyProperties, Map<String, ?> paramMap) throws SQLException {
     if (paramMap.isEmpty()) {
       return;
     }
     Map<String, Entry<Iterator<?>, List<KeyAssigner>>> assignerMap = new HashMap<>();
     for (int i = 0; i < keyProperties.length; i++) {
       Entry<String, KeyAssigner> entry = getAssignerForParamMap(configuration, rsmd, i + 1, paramMap, keyProperties[i],
-          keyProperties, true);
+        keyProperties, true);
       Entry<Iterator<?>, List<KeyAssigner>> iteratorPair = MapUtil.computeIfAbsent(assignerMap, entry.getKey(),
-          k -> MapUtil.entry(collectionize(paramMap.get(k)).iterator(), new ArrayList<>()));
+        k -> MapUtil.entry(collectionize(paramMap.get(k)).iterator(), new ArrayList<>()));
       iteratorPair.getValue().add(entry.getValue());
     }
     long counter = 0;
@@ -174,7 +176,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
   }
 
   private Entry<String, KeyAssigner> getAssignerForParamMap(Configuration config, ResultSetMetaData rsmd,
-      int columnPosition, Map<String, ?> paramMap, String keyProperty, String[] keyProperties, boolean omitParamName) {
+                                                            int columnPosition, Map<String, ?> paramMap, String keyProperty, String[] keyProperties, boolean omitParamName) {
     Set<String> keySet = paramMap.keySet();
     // A caveat : if the only parameter has {@code @Param("param2")} on it,
     // it must be referenced with param name e.g. 'param2.x'.
@@ -185,9 +187,9 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
         return getAssignerForSingleParam(config, rsmd, columnPosition, paramMap, keyProperty, omitParamName);
       }
       throw new ExecutorException("Could not determine which parameter to assign generated keys to. "
-          + "Note that when there are multiple parameters, 'keyProperty' must include the parameter name (e.g. 'param.id'). "
-          + "Specified key properties are " + ArrayUtil.toString(keyProperties) + " and available parameters are "
-          + keySet);
+        + "Note that when there are multiple parameters, 'keyProperty' must include the parameter name (e.g. 'param.id'). "
+        + "Specified key properties are " + ArrayUtil.toString(keyProperties) + " and available parameters are "
+        + keySet);
     }
     String paramName = keyProperty.substring(0, firstDot);
     if (keySet.contains(paramName)) {
@@ -199,14 +201,14 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
       return getAssignerForSingleParam(config, rsmd, columnPosition, paramMap, keyProperty, omitParamName);
     } else {
       throw new ExecutorException("Could not find parameter '" + paramName + "'. "
-          + "Note that when there are multiple parameters, 'keyProperty' must include the parameter name (e.g. 'param.id'). "
-          + "Specified key properties are " + ArrayUtil.toString(keyProperties) + " and available parameters are "
-          + keySet);
+        + "Note that when there are multiple parameters, 'keyProperty' must include the parameter name (e.g. 'param.id'). "
+        + "Specified key properties are " + ArrayUtil.toString(keyProperties) + " and available parameters are "
+        + keySet);
     }
   }
 
   private Entry<String, KeyAssigner> getAssignerForSingleParam(Configuration config, ResultSetMetaData rsmd,
-      int columnPosition, Map<String, ?> paramMap, String keyProperty, boolean omitParamName) {
+                                                               int columnPosition, Map<String, ?> paramMap, String keyProperty, boolean omitParamName) {
     // Assume 'keyProperty' to be a property of the single param.
     String singleParamName = nameOfSingleParam(paramMap);
     String argParamName = omitParamName ? null : singleParamName;
@@ -238,8 +240,16 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
     private final String propertyName;
     private TypeHandler<?> typeHandler;
 
+    /**
+     *
+     * @param configuration  用于生成 MetaObject 反射操作器，以及在构造器里面获取 TypeHandlerRegistry
+     * @param rsmd           JDBC 的规范，其中包含了结果集元数据
+     * @param columnPosition 第几列
+     * @param paramName      MyBatis 的参数名，可能是 arg0，或者是 null 之类
+     * @param propertyName   Key 在 Java 字段中的属性名，一般通过 XML keyProperty 设置
+     */
     protected KeyAssigner(Configuration configuration, ResultSetMetaData rsmd, int columnPosition, String paramName,
-        String propertyName) {
+                          String propertyName) {
       this.configuration = configuration;
       this.rsmd = rsmd;
       this.typeHandlerRegistry = configuration.getTypeHandlerRegistry();
@@ -249,30 +259,44 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
     }
 
     protected void assign(ResultSet rs, Object param) {
+      // paramName 如果有名字，一定被组织成了 Map 结构，直接从中取出
+      // 除非只有 1 个参数，且没有设置 name，才没有名字
       if (paramName != null) {
         // If paramName is set, param is ParamMap
         param = ((ParamMap<?>) param).get(paramName);
       }
+
+      // 获取对象操作器
       MetaObject metaParam = configuration.newMetaObject(param);
       try {
+        // 如果没有指定 typeHandler，也找不到 setter，那就完蛋了，报错
         if (typeHandler == null) {
           if (!metaParam.hasSetter(propertyName)) {
             throw new ExecutorException("No setter found for the keyProperty '" + propertyName + "' in '"
-                + metaParam.getOriginalObject().getClass().getName() + "'.");
+              + metaParam.getOriginalObject().getClass().getName() + "'.");
           }
+
+          // 获取 Setter 的类型
           Class<?> propertyType = metaParam.getSetterType(propertyName);
+
+          // 获取 typeHandler
           typeHandler = typeHandlerRegistry.getTypeHandler(propertyType,
-              JdbcType.forCode(rsmd.getColumnType(columnPosition)));
+            // rsmd 还记得吗，元数据，获得第 columnPosition 列的类型，返回的是 JDBC 规定的 int 值
+            // MyBatis 自己做了映射，使用 JdbcType.forCode 转换成 MyBatis 自己的 JdbcType
+            JdbcType.forCode(rsmd.getColumnType(columnPosition)));
         }
+
+        // 还是没有 typeHandler
         if (typeHandler == null) {
           // Error?
         } else {
+          // 获得 typeHandler 转换的 result
           Object value = typeHandler.getResult(rs, columnPosition);
           metaParam.setValue(propertyName, value);
         }
       } catch (SQLException e) {
         throw new ExecutorException("Error getting generated key or setting result to parameter object. Cause: " + e,
-            e);
+          e);
       }
     }
   }
