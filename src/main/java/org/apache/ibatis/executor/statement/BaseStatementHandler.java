@@ -34,6 +34,8 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 这个 StatementHandler 是所有工作的实现类的模板类
+ *
  * @author Clinton Begin
  */
 public abstract class BaseStatementHandler implements StatementHandler {
@@ -51,7 +53,7 @@ public abstract class BaseStatementHandler implements StatementHandler {
   protected BoundSql boundSql;
 
   protected BaseStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject,
-      RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+                                 RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
     this.configuration = mappedStatement.getConfiguration();
     this.executor = executor;
     this.mappedStatement = mappedStatement;
@@ -60,6 +62,8 @@ public abstract class BaseStatementHandler implements StatementHandler {
     this.typeHandlerRegistry = configuration.getTypeHandlerRegistry();
     this.objectFactory = configuration.getObjectFactory();
 
+    // 这个设计很巧妙
+    // 这里为什么会是 null 呢，如果是 UPDATE 这种语句 TODO 忘记了
     if (boundSql == null) { // issue #435, get the key before calculating the statement
       generateKeys(parameterObject);
       boundSql = mappedStatement.getBoundSql(parameterObject);
@@ -69,7 +73,7 @@ public abstract class BaseStatementHandler implements StatementHandler {
 
     this.parameterHandler = configuration.newParameterHandler(mappedStatement, parameterObject, boundSql);
     this.resultSetHandler = configuration.newResultSetHandler(executor, mappedStatement, rowBounds, parameterHandler,
-        resultHandler, boundSql);
+      resultHandler, boundSql);
   }
 
   @Override
@@ -85,6 +89,7 @@ public abstract class BaseStatementHandler implements StatementHandler {
   @Override
   public Statement prepare(Connection connection, Integer transactionTimeout) throws SQLException {
     ErrorContext.instance().sql(boundSql.getSql());
+
     Statement statement = null;
     try {
       // 根据不同子类。获得 Statement
@@ -92,7 +97,10 @@ public abstract class BaseStatementHandler implements StatementHandler {
 
       // 设置 timeout
       setStatementTimeout(statement, transactionTimeout);
+
+      // 设置 fetch size
       setFetchSize(statement);
+
       return statement;
     } catch (SQLException e) {
       closeStatement(statement);
@@ -107,18 +115,29 @@ public abstract class BaseStatementHandler implements StatementHandler {
 
   protected void setStatementTimeout(Statement stmt, Integer transactionTimeout) throws SQLException {
     Integer queryTimeout = null;
+
+    // 如果 ms 设置了 timeout
     if (mappedStatement.getTimeout() != null) {
       queryTimeout = mappedStatement.getTimeout();
-    } else if (configuration.getDefaultStatementTimeout() != null) {
+    }
+    // 如果 ms 没有设置，但是 global 设置了 timeout
+    else if (configuration.getDefaultStatementTimeout() != null) {
       queryTimeout = configuration.getDefaultStatementTimeout();
     }
+
+    // 设置超时
     if (queryTimeout != null) {
       stmt.setQueryTimeout(queryTimeout);
     }
+
+    // 上面都是从 ms 和 global 获取的
+    // 如果 transaction timeout 设置的更小，那么就用 transaction timeout
     StatementUtil.applyTransactionTimeout(stmt, queryTimeout, transactionTimeout);
   }
 
   protected void setFetchSize(Statement stmt) throws SQLException {
+    // 与 timeout 类似，遵循先 ms 再 global
+    // 如果都没没有找到，那就不设置了
     Integer fetchSize = mappedStatement.getFetchSize();
     if (fetchSize != null) {
       stmt.setFetchSize(fetchSize);

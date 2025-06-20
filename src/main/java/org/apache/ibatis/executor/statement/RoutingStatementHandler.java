@@ -30,15 +30,20 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 /**
+ * 这是一个执行入口，使用了策略模式，根据不同的情况，交给不同的 delegate 去执行
+ *
  * @author Clinton Begin
  */
 public class RoutingStatementHandler implements StatementHandler {
 
   private final StatementHandler delegate;
 
+  /**
+   * 构造器就已经把 delegate 决定好了
+   */
   public RoutingStatementHandler(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds,
-      ResultHandler resultHandler, BoundSql boundSql) {
-
+                                 ResultHandler resultHandler, BoundSql boundSql) {
+    // 根据 ms 语句类型，创建不同的具体的 StatementHandler
     switch (ms.getStatementType()) {
       case STATEMENT:
         delegate = new SimpleStatementHandler(executor, ms, parameter, rowBounds, resultHandler, boundSql);

@@ -52,6 +52,8 @@ public class StatementUtil {
     if (transactionTimeout == null) {
       return;
     }
+
+    // 如果 transaction timeout 比 query timeout 更小，那么就用更小的
     if (queryTimeout == null || queryTimeout == 0 || transactionTimeout < queryTimeout) {
       statement.setQueryTimeout(transactionTimeout);
     }

@@ -26,12 +26,21 @@ import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.session.ResultHandler;
 
 /**
+ *
+ * StatementHandler 我个人理解就是创建语句、设置语句参数、执行语句拿到结果的处理器
+ *
  * @author Clinton Begin
  */
 public interface StatementHandler {
 
+  /**
+   * 创建语句
+   */
   Statement prepare(Connection connection, Integer transactionTimeout) throws SQLException;
 
+  /**
+   * 设置语句参数
+   */
   void parameterize(Statement statement) throws SQLException;
 
   void batch(Statement statement) throws SQLException;
