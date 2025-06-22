@@ -84,9 +84,14 @@ public class PreparedStatementHandler extends BaseStatementHandler {
         return connection.prepareStatement(sql, keyColumnNames);
       }
     }
+
+
+    // 如果对于 ResultSetType 没有特别要求，就按照最简单的方式创建
     if (mappedStatement.getResultSetType() == ResultSetType.DEFAULT) {
       return connection.prepareStatement(sql);
-    } else {
+    }
+    // 如果设置了 ResultSetType，结果集的类型就设置为那个类型，但是并发性设置为结果集只读（还有一个是可以更新，估计mysql不支持吧）
+    else {
       return connection.prepareStatement(sql, mappedStatement.getResultSetType().getValue(),
           ResultSet.CONCUR_READ_ONLY);
     }

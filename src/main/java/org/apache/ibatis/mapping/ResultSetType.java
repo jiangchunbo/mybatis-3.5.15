@@ -18,6 +18,8 @@ package org.apache.ibatis.mapping;
 import java.sql.ResultSet;
 
 /**
+ * Result Set 类型
+ *
  * @author Clinton Begin
  */
 public enum ResultSetType {
@@ -26,7 +28,13 @@ public enum ResultSetType {
    *
    * @since 3.5.0
    */
-  DEFAULT(-1), FORWARD_ONLY(ResultSet.TYPE_FORWARD_ONLY), SCROLL_INSENSITIVE(ResultSet.TYPE_SCROLL_INSENSITIVE),
+  DEFAULT(-1),
+
+  /**
+   * 只能向前
+   */
+  FORWARD_ONLY(ResultSet.TYPE_FORWARD_ONLY),
+  SCROLL_INSENSITIVE(ResultSet.TYPE_SCROLL_INSENSITIVE),
   SCROLL_SENSITIVE(ResultSet.TYPE_SCROLL_SENSITIVE);
 
   private final int value;

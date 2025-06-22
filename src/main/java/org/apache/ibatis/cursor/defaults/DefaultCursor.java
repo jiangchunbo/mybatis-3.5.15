@@ -38,14 +38,18 @@ public class DefaultCursor<T> implements Cursor<T> {
   // ResultSetHandler stuff
   private final DefaultResultSetHandler resultSetHandler;
   private final ResultMap resultMap;
-  private final ResultSetWrapper rsw;
+  private final ResultSetWrapper resultSetWrapper;
   private final RowBounds rowBounds;
   protected final ObjectWrapperResultHandler<T> objectWrapperResultHandler = new ObjectWrapperResultHandler<>();
 
   private final CursorIterator cursorIterator = new CursorIterator();
   private boolean iteratorRetrieved;
 
+  /**
+   * 这表示构造器创建完这个对象，状态是 CREATED
+   */
   private CursorStatus status = CursorStatus.CREATED;
+
   private int indexWithRowBound = -1;
 
   private enum CursorStatus {
@@ -68,11 +72,11 @@ public class DefaultCursor<T> implements Cursor<T> {
     CONSUMED
   }
 
-  public DefaultCursor(DefaultResultSetHandler resultSetHandler, ResultMap resultMap, ResultSetWrapper rsw,
+  public DefaultCursor(DefaultResultSetHandler resultSetHandler, ResultMap resultMap, ResultSetWrapper resultSetWrapper,
       RowBounds rowBounds) {
     this.resultSetHandler = resultSetHandler;
     this.resultMap = resultMap;
-    this.rsw = rsw;
+    this.resultSetWrapper = resultSetWrapper;
     this.rowBounds = rowBounds;
   }
 
@@ -109,7 +113,7 @@ public class DefaultCursor<T> implements Cursor<T> {
       return;
     }
 
-    ResultSet rs = rsw.getResultSet();
+    ResultSet rs = resultSetWrapper.getResultSet();
     try {
       if (rs != null) {
         rs.close();
@@ -123,6 +127,9 @@ public class DefaultCursor<T> implements Cursor<T> {
 
   protected T fetchNextUsingRowBound() {
     T result = fetchNextObjectFromDatabase();
+
+    // 需要满足 rowBounds 如果还没有跳过 offset，就需要不断调用 fetchNextObjectFromDatabase 丢弃行
+    // 默认我们都不用 rowBounds 因此 offset 是 0
     while (objectWrapperResultHandler.fetched && indexWithRowBound < rowBounds.getOffset()) {
       result = fetchNextObjectFromDatabase();
     }
@@ -130,25 +137,41 @@ public class DefaultCursor<T> implements Cursor<T> {
   }
 
   protected T fetchNextObjectFromDatabase() {
+    // 若已关闭，直接返回 null
     if (isClosed()) {
       return null;
     }
 
     try {
+      // 把 fetched 置为 false (算初始化吧，表示还没抓取)
+      // 状态改为 OPEN
       objectWrapperResultHandler.fetched = false;
       status = CursorStatus.OPEN;
-      if (!rsw.getResultSet().isClosed()) {
-        resultSetHandler.handleRowValues(rsw, resultMap, objectWrapperResultHandler, RowBounds.DEFAULT, null);
+
+      // 处理 RowValue，如果抓取到数据了，其中会把 fetched 置为 true
+      if (!resultSetWrapper.getResultSet().isClosed()) {
+        // 这里面会做的事情有：
+        // 从 ResultSet 读取下一行
+        // 按 resultMap 做对象映射
+        // 交给 ObjectWrapperResultHandler.handleResult()
+        resultSetHandler.handleRowValues(resultSetWrapper, resultMap, objectWrapperResultHandler, RowBounds.DEFAULT, null);
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
 
+    // 从 objectWrapperResultHandler 获取下一个对象
+    // 但是，如果根本没有记录，是不会被 resultHandler 处理，这里也是 null
     T next = objectWrapperResultHandler.result;
+
+    // 因为 objectWrapperResultHandler 将 fetched 置为 true，因此这里 index + 1
+    // 如果根本没有被 resultHandler 处理，这里也是默认 false
     if (objectWrapperResultHandler.fetched) {
       indexWithRowBound++;
     }
+
     // No more object or limit reached
+    // 没有更多对象了
     if (!objectWrapperResultHandler.fetched || getReadItemsCount() == rowBounds.getOffset() + rowBounds.getLimit()) {
       close();
       status = CursorStatus.CONSUMED;
@@ -168,13 +191,25 @@ public class DefaultCursor<T> implements Cursor<T> {
 
   protected static class ObjectWrapperResultHandler<T> implements ResultHandler<T> {
 
+    /**
+     * 结果处理器
+     */
     protected T result;
+
+    /**
+     * 是否抓取到了数据，默认是 false，如果是 false 就会从数据库抓取
+     */
     protected boolean fetched;
 
     @Override
     public void handleResult(ResultContext<? extends T> context) {
+      // 保存那一行
       this.result = context.getResultObject();
+
+      // 让 ResultHandler 停止
       context.stop();
+
+      // 标记已经取到数据了
       fetched = true;
     }
   }
@@ -191,11 +226,16 @@ public class DefaultCursor<T> implements Cursor<T> {
      */
     int iteratorIndex = -1;
 
+    /**
+     * 返回是否有下一个
+     */
     @Override
     public boolean hasNext() {
+      // 是否取到数据，没取到就从数据库取
       if (!objectWrapperResultHandler.fetched) {
         object = fetchNextUsingRowBound();
       }
+
       return objectWrapperResultHandler.fetched;
     }
 

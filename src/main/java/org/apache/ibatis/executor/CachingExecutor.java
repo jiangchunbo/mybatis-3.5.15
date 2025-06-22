@@ -33,13 +33,23 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
 /**
+ * CachingExecutor 使用了组合优于继承的思想，它没有像 BaseExecutor 那样创建一个积累，而是也实现了 Executor + 委托
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
 public class CachingExecutor implements Executor {
 
+  /**
+   * 委托对象
+   */
   private final Executor delegate;
-  private final TransactionalCacheManager tcm = new TransactionalCacheManager();
+
+
+  /**
+   * 事务缓存管理器
+   */
+  private final TransactionalCacheManager transactionalCacheManager = new TransactionalCacheManager();
 
   public CachingExecutor(Executor delegate) {
     this.delegate = delegate;
@@ -56,9 +66,9 @@ public class CachingExecutor implements Executor {
     try {
       // issues #499, #524 and #573
       if (forceRollback) {
-        tcm.rollback();
+        transactionalCacheManager.rollback();
       } else {
-        tcm.commit();
+        transactionalCacheManager.commit();
       }
     } finally {
       delegate.close(forceRollback);
@@ -72,7 +82,11 @@ public class CachingExecutor implements Executor {
 
   @Override
   public int update(MappedStatement ms, Object parameterObject) throws SQLException {
+    // 更新之前 flush 缓存
+    // 为什么方法加一个 ifRequired 呢？这是因为未必存在缓存，而且也未必真的要刷新(检查是否 flushCache 设置)
     flushCacheIfRequired(ms);
+
+    // 委托，不多说
     return delegate.update(ms, parameterObject);
   }
 
@@ -95,14 +109,18 @@ public class CachingExecutor implements Executor {
       CacheKey key, BoundSql boundSql) throws SQLException {
     Cache cache = ms.getCache();
     if (cache != null) {
+      // ms 是否设置了 flushCache
       flushCacheIfRequired(ms);
+
+      // 是否使用缓存，且没有自定义的 resultHandler
       if (ms.isUseCache() && resultHandler == null) {
         ensureNoOutParams(ms, boundSql);
         @SuppressWarnings("unchecked")
-        List<E> list = (List<E>) tcm.getObject(cache, key);
+        List<E> list = (List<E>) transactionalCacheManager.getObject(cache, key);
         if (list == null) {
+          // 还是委托
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
-          tcm.putObject(cache, key, list); // issue #578 and #116
+          transactionalCacheManager.putObject(cache, key, list); // issue #578 and #116
         }
         return list;
       }
@@ -118,7 +136,7 @@ public class CachingExecutor implements Executor {
   @Override
   public void commit(boolean required) throws SQLException {
     delegate.commit(required);
-    tcm.commit();
+    transactionalCacheManager.commit();
   }
 
   @Override
@@ -127,7 +145,7 @@ public class CachingExecutor implements Executor {
       delegate.rollback(required);
     } finally {
       if (required) {
-        tcm.rollback();
+        transactionalCacheManager.rollback();
       }
     }
   }
@@ -168,7 +186,8 @@ public class CachingExecutor implements Executor {
   private void flushCacheIfRequired(MappedStatement ms) {
     Cache cache = ms.getCache();
     if (cache != null && ms.isFlushCacheRequired()) {
-      tcm.clear(cache);
+      // 事务缓存管理器
+      transactionalCacheManager.clear(cache);
     }
   }
 

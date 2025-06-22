@@ -223,10 +223,14 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     return collapseSingleResultList(multipleResults);
   }
 
+  /**
+   * 结果集处理器如何处理 Statement
+   */
   @Override
   public <E> Cursor<E> handleCursorResultSets(Statement stmt) throws SQLException {
     ErrorContext.instance().activity("handling cursor results").object(mappedStatement.getId());
 
+    // 获得第一个结果集
     ResultSetWrapper rsw = getFirstResultSet(stmt);
 
     List<ResultMap> resultMaps = mappedStatement.getResultMaps();
@@ -238,6 +242,8 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
 
     ResultMap resultMap = resultMaps.get(0);
+
+    // 直接返回了一个 DefaultCursor 对象
     return new DefaultCursor<>(this, resultMap, rsw, rowBounds);
   }
 
@@ -253,6 +259,8 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         break;
       }
     }
+
+    // 将 ResultSet 包装起来
     return rs != null ? new ResultSetWrapper(rs, configuration) : null;
   }
 
@@ -329,6 +337,8 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   public void handleRowValues(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler,
       RowBounds rowBounds, ResultMapping parentMapping) throws SQLException {
+
+    // 是否有什么嵌套的 ResultMap
     if (resultMap.hasNestedResultMaps()) {
       ensureNoRowBounds();
       checkResultHandler();
@@ -361,6 +371,9 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     DefaultResultContext<Object> resultContext = new DefaultResultContext<>();
     ResultSet resultSet = rsw.getResultSet();
     skipRows(resultSet, rowBounds);
+
+    // shouldProcessMoreRows: 两个条件，一个是 context 不能 stop，另一个是 result count 还没到达 limit
+    // resultSet.next() 就是中规中矩的 JDBC 方法
     while (shouldProcessMoreRows(resultContext, rowBounds) && !resultSet.isClosed() && resultSet.next()) {
       ResultMap discriminatedResultMap = resolveDiscriminatedResultMap(resultSet, resultMap, null);
       Object rowValue = getRowValue(rsw, discriminatedResultMap, null);
@@ -408,7 +421,11 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   private Object getRowValue(ResultSetWrapper rsw, ResultMap resultMap, String columnPrefix) throws SQLException {
     final ResultLoaderMap lazyLoader = new ResultLoaderMap();
+
+    // 创建一个 row 对象
     Object rowValue = createResultObject(rsw, resultMap, lazyLoader, columnPrefix);
+
+
     if (rowValue != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
       final MetaObject metaObject = configuration.newMetaObject(rowValue);
       boolean foundValues = this.useConstructorMappings;

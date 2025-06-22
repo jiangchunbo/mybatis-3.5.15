@@ -41,6 +41,10 @@ public class TransactionalCache implements Cache {
 
   private final Cache delegate;
   private boolean clearOnCommit;
+
+  /**
+   * 一个所谓的什么 entry，记录着当 commit 时要添加的 entry
+   */
   private final Map<Object, Object> entriesToAddOnCommit;
   private final Set<Object> entriesMissedInCache;
 
@@ -61,22 +65,34 @@ public class TransactionalCache implements Cache {
     return delegate.getSize();
   }
 
+
+  /**
+   * 获得缓存
+   */
   @Override
   public Object getObject(Object key) {
     // issue #116
+    // 从委托中获取
     Object object = delegate.getObject(key);
+
+    // 如果没有缓存 value
     if (object == null) {
+      // 记录一下未命中的，后面会清掉
       entriesMissedInCache.add(key);
     }
+
     // issue #146
+    // 一旦设置了事务提交要清空缓存，那么干脆全都返回 null
     if (clearOnCommit) {
       return null;
     }
     return object;
   }
 
+
   @Override
   public void putObject(Object key, Object object) {
+    //
     entriesToAddOnCommit.put(key, object);
   }
 
@@ -87,7 +103,13 @@ public class TransactionalCache implements Cache {
 
   @Override
   public void clear() {
+
+    // 做个标记，如果 commit 就清空
+    // 这是什么意思，这说明缓存已经脏了
     clearOnCommit = true;
+
+    // 在 commit 时，将缓存中心的 entry 也清空
+    // 清空
     entriesToAddOnCommit.clear();
   }
 
@@ -127,7 +149,7 @@ public class TransactionalCache implements Cache {
         delegate.removeObject(entry);
       } catch (Exception e) {
         log.warn("Unexpected exception while notifying a rollback to the cache adapter. "
-            + "Consider upgrading your cache adapter to the latest version. Cause: " + e);
+          + "Consider upgrading your cache adapter to the latest version. Cause: " + e);
       }
     }
   }

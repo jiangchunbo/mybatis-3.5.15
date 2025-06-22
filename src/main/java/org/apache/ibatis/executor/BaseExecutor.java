@@ -174,6 +174,9 @@ public abstract class BaseExecutor implements Executor {
     return list;
   }
 
+  /**
+   * 处理返回值是 Cursor 的场景
+   */
   @Override
   public <E> Cursor<E> queryCursor(MappedStatement ms, Object parameter, RowBounds rowBounds) throws SQLException {
     BoundSql boundSql = ms.getBoundSql(parameter);

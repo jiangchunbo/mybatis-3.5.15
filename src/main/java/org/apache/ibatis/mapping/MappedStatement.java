@@ -39,6 +39,10 @@ public final class MappedStatement {
   private Integer fetchSize;
   private Integer timeout;
   private StatementType statementType;
+
+  /**
+   * 这里就是那些 Forward only、scroll insensitive、scroll sensitive
+   */
   private ResultSetType resultSetType;
   private SqlSource sqlSource;
   private Cache cache;

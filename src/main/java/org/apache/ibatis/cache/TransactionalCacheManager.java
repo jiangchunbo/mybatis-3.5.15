@@ -26,8 +26,20 @@ import org.apache.ibatis.util.MapUtil;
  */
 public class TransactionalCacheManager {
 
+  /**
+   * 这里维护了一个 map，而且 TransactionalCache 里面包含了一个 delegate Cache 缓存，其就是 key
+   * <p>
+   * 感觉这里面又有点像 AOP，通过 Cache 的 key 找到它的增强对象，然后操作
+   * <p>
+   * 为什么不直接操作 Cache 呢，这样这个执行器的事务就察觉不到了
+   */
   private final Map<Cache, TransactionalCache> transactionalCaches = new HashMap<>();
 
+  /**
+   * 底层会将事务缓存 clearOnCommit 置为 true，表示事务提交之后要把缓存都清掉
+   * <p>
+   * 一旦调用了 clear 以后再也无法从这个 cache 中获得任何 value
+   */
   public void clear(Cache cache) {
     getTransactionalCache(cache).clear();
   }
@@ -52,7 +64,14 @@ public class TransactionalCacheManager {
     }
   }
 
+
+  /**
+   * 好多方法都通过这个方法寻找 TransactionalCache
+   */
   private TransactionalCache getTransactionalCache(Cache cache) {
+    // 这个 computeIfAbsent API 设计得挺费解的
+    // 第二个入参是 TransactionalCache::new，其实等价于 new TransactionalCache(cache)
+    // 构造器的参数就是接收的 cache
     return MapUtil.computeIfAbsent(transactionalCaches, cache, TransactionalCache::new);
   }
 
