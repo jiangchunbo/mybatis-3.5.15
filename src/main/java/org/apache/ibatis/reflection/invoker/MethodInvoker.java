@@ -31,6 +31,9 @@ public class MethodInvoker implements Invoker {
   public MethodInvoker(Method method) {
     this.method = method;
 
+    // 如果参数只有 1 个，那么这唯一一个就是 type
+    // 否则，直接使用 method 返回值作为 type
+    // 这不就是专门为 Setter Getter 写的么
     if (method.getParameterTypes().length == 1) {
       type = method.getParameterTypes()[0];
     } else {

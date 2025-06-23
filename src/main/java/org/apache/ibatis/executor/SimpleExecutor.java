@@ -85,6 +85,8 @@ public class SimpleExecutor extends BaseExecutor {
   protected <E> Cursor<E> doQueryCursor(MappedStatement ms, Object parameter, RowBounds rowBounds, BoundSql boundSql)
     throws SQLException {
     Configuration configuration = ms.getConfiguration();
+
+    // 创建 Statement 处理器，用于创建语句、设置语句参数、执行语句
     StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, null, boundSql);
     Statement stmt = prepareStatement(handler, ms.getStatementLog());
     Cursor<E> cursor = handler.queryCursor(stmt);

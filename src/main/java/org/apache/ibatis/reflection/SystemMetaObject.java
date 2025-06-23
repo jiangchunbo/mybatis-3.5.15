@@ -37,6 +37,11 @@ public final class SystemMetaObject {
   private static class NullObject {
   }
 
+  /**
+   * 使用各种默认的参数参数可以得到
+   * @param object
+   * @return
+   */
   public static MetaObject forObject(Object object) {
     return MetaObject.forObject(object, DEFAULT_OBJECT_FACTORY, DEFAULT_OBJECT_WRAPPER_FACTORY,
         new DefaultReflectorFactory());

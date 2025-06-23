@@ -62,8 +62,8 @@ public abstract class BaseStatementHandler implements StatementHandler {
     this.typeHandlerRegistry = configuration.getTypeHandlerRegistry();
     this.objectFactory = configuration.getObjectFactory();
 
-    // 这个设计很巧妙
-    // 这里为什么会是 null 呢，如果是 UPDATE 这种语句 TODO 忘记了
+    // 如果是 DML 语句，这里就是 null
+    // 因为 DQL 语句会在这里靠前的地方就计算了 boundSql，它们需要用于缓存
     if (boundSql == null) { // issue #435, get the key before calculating the statement
       generateKeys(parameterObject);
       boundSql = mappedStatement.getBoundSql(parameterObject);

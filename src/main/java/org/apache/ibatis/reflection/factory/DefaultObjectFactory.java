@@ -40,14 +40,22 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
 
   private static final long serialVersionUID = -8855120656740914948L;
 
+  /**
+   * 使用无参构造器创建对象
+   */
   @Override
   public <T> T create(Class<T> type) {
     return create(type, null, null);
   }
 
+  /**
+   * 使用有参构造器创建对象
+   */
   @SuppressWarnings("unchecked")
   @Override
   public <T> T create(Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
+    // 解析接口，避免用户传入一些接口，接口怎么可能实例化呢
+    // 这个方法其实也算不上完善，只能勉强处理一些集合
     Class<?> classToCreate = resolveInterface(type);
     // we know types are assignable
     return (T) instantiateClass(classToCreate, constructorArgTypes, constructorArgs);
@@ -56,7 +64,9 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
   private <T> T instantiateClass(Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
     try {
       Constructor<T> constructor;
+      // 没有参数
       if (constructorArgTypes == null || constructorArgs == null) {
+        // 获取午餐构造器
         constructor = type.getDeclaredConstructor();
         try {
           return constructor.newInstance();
@@ -68,6 +78,8 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
           throw e;
         }
       }
+
+      // 将参数类型转换成 Array，找到构造器
       constructor = type.getDeclaredConstructor(constructorArgTypes.toArray(new Class[0]));
       try {
         return constructor.newInstance(constructorArgs.toArray(new Object[0]));
@@ -80,11 +92,11 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
       }
     } catch (Exception e) {
       String argTypes = Optional.ofNullable(constructorArgTypes).orElseGet(Collections::emptyList).stream()
-          .map(Class::getSimpleName).collect(Collectors.joining(","));
+        .map(Class::getSimpleName).collect(Collectors.joining(","));
       String argValues = Optional.ofNullable(constructorArgs).orElseGet(Collections::emptyList).stream()
-          .map(String::valueOf).collect(Collectors.joining(","));
+        .map(String::valueOf).collect(Collectors.joining(","));
       throw new ReflectionException("Error instantiating " + type + " with invalid types (" + argTypes + ") or values ("
-          + argValues + "). Cause: " + e, e);
+        + argValues + "). Cause: " + e, e);
     }
   }
 

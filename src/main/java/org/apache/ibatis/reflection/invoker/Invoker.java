@@ -18,6 +18,9 @@ package org.apache.ibatis.reflection.invoker;
 import java.lang.reflect.InvocationTargetException;
 
 /**
+ * 一个 Invoker 其实内置了一个 AccessibleObject，可能是 Field 也可能是 Method，
+ * 对于 MyBatis 来说可以隐藏通过字段获取值，还是通过 Getter Setter 获取值
+ *
  * @author Clinton Begin
  */
 public interface Invoker {

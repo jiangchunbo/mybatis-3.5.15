@@ -129,11 +129,17 @@ public abstract class BaseExecutor implements Executor {
     return doFlushStatements(isRollBack);
   }
 
+
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler)
       throws SQLException {
+    // 传入 parameter(已经进行过 convert) 尽早构造出 BoundSql
     BoundSql boundSql = ms.getBoundSql(parameter);
+
+    // 因为没有 BoundSql 没有办法构造 CacheKey
     CacheKey key = createCacheKey(ms, parameter, rowBounds, boundSql);
+
+    // 调用查询
     return query(ms, parameter, rowBounds, resultHandler, key, boundSql);
   }
 
