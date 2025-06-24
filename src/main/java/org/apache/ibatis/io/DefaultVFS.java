@@ -45,8 +45,10 @@ import org.apache.ibatis.logging.LogFactory;
 public class DefaultVFS extends VFS {
   private static final Log log = LogFactory.getLog(DefaultVFS.class);
 
-  /** The magic header that indicates a JAR (ZIP) file. */
-  private static final byte[] JAR_MAGIC = { 'P', 'K', 3, 4 };
+  /**
+   * The magic header that indicates a JAR (ZIP) file.
+   */
+  private static final byte[] JAR_MAGIC = {'P', 'K', 3, 4};
 
   @Override
   public boolean isValid() {
@@ -79,7 +81,7 @@ public class DefaultVFS extends VFS {
               if (log.isDebugEnabled()) {
                 log.debug("Listing " + url);
               }
-              for (JarEntry entry; (entry = jarInput.getNextJarEntry()) != null;) {
+              for (JarEntry entry; (entry = jarInput.getNextJarEntry()) != null; ) {
                 if (log.isDebugEnabled()) {
                   log.debug("Jar entry: " + entry.getName());
                 }
@@ -97,7 +99,7 @@ public class DefaultVFS extends VFS {
             is = url.openStream();
             List<String> lines = new ArrayList<>();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-              for (String line; (line = reader.readLine()) != null;) {
+              for (String line; (line = reader.readLine()) != null; ) {
                 if (log.isDebugEnabled()) {
                   log.debug("Reader entry: " + line);
                 }
@@ -170,15 +172,10 @@ public class DefaultVFS extends VFS {
    * List the names of the entries in the given {@link JarInputStream} that begin with the specified {@code path}.
    * Entries will match with or without a leading slash.
    *
-   * @param jar
-   *          The JAR input stream
-   * @param path
-   *          The leading path to match
-   *
+   * @param jar  The JAR input stream
+   * @param path The leading path to match
    * @return The names of all the matching entries
-   *
-   * @throws IOException
-   *           If I/O errors occur
+   * @throws IOException If I/O errors occur
    */
   protected List<String> listResources(JarInputStream jar, String path) throws IOException {
     // Include the leading and trailing slash when matching names
@@ -191,7 +188,7 @@ public class DefaultVFS extends VFS {
 
     // Iterate over the entries and collect those that begin with the requested path
     List<String> resources = new ArrayList<>();
-    for (JarEntry entry; (entry = jar.getNextJarEntry()) != null;) {
+    for (JarEntry entry; (entry = jar.getNextJarEntry()) != null; ) {
       if (!entry.isDirectory()) {
         // Add leading slash if it's missing
         StringBuilder name = new StringBuilder(entry.getName());
@@ -216,14 +213,12 @@ public class DefaultVFS extends VFS {
    * Attempts to deconstruct the given URL to find a JAR file containing the resource referenced by the URL. That is,
    * assuming the URL references a JAR entry, this method will return a URL that references the JAR file containing the
    * entry. If the JAR cannot be located, then this method returns null.
+   * <p>
+   * 挺难理解的方法，传入 URL 得到 URL
    *
-   * @param url
-   *          The URL of the JAR entry.
-   *
+   * @param url The URL of the JAR entry.
    * @return The URL of the JAR file, if one is found. Null if not.
-   *
-   * @throws MalformedURLException
-   *           the malformed URL exception
+   * @throws MalformedURLException the malformed URL exception
    */
   protected URL findJarForResource(URL url) throws MalformedURLException {
     if (log.isDebugEnabled()) {
@@ -231,6 +226,10 @@ public class DefaultVFS extends VFS {
     }
 
     // If the file part of the URL is itself a URL, then that URL probably points to the JAR
+    // 通过这个循环，不断剥离
+    // 假设你的入参是 jar:file:/E:/mybatis-demo/target/mybatis-demo-1.0-SNAPSHOT.jar!/com/jiangchunbo
+    // 经过第一次循环，得到的是 file:/E:/mybatis-demo/target/mybatis-demo-1.0-SNAPSHOT.jar!/com/jiangchunbo
+    // 可以发现第一层协议被剥离了
     boolean continueLoop = true;
     while (continueLoop) {
       try {
@@ -303,9 +302,7 @@ public class DefaultVFS extends VFS {
    * Converts a Java package name to a path that can be looked up with a call to
    * {@link ClassLoader#getResources(String)}.
    *
-   * @param packageName
-   *          The Java package name to convert to a path
-   *
+   * @param packageName The Java package name to convert to a path
    * @return the package path
    */
   protected String getPackagePath(String packageName) {
@@ -315,9 +312,7 @@ public class DefaultVFS extends VFS {
   /**
    * Returns true if the resource located at the given URL is a JAR file.
    *
-   * @param url
-   *          The URL of the resource to test.
-   *
+   * @param url The URL of the resource to test.
    * @return true, if is jar
    */
   protected boolean isJar(URL url) {
@@ -327,12 +322,9 @@ public class DefaultVFS extends VFS {
   /**
    * Returns true if the resource located at the given URL is a JAR file.
    *
-   * @param url
-   *          The URL of the resource to test.
-   * @param buffer
-   *          A buffer into which the first few bytes of the resource are read. The buffer must be at least the size of
-   *          {@link #JAR_MAGIC}. (The same buffer may be reused for multiple calls as an optimization.)
-   *
+   * @param url    The URL of the resource to test.
+   * @param buffer A buffer into which the first few bytes of the resource are read. The buffer must be at least the size of
+   *               {@link #JAR_MAGIC}. (The same buffer may be reused for multiple calls as an optimization.)
    * @return true, if is jar
    */
   protected boolean isJar(URL url, byte[] buffer) {

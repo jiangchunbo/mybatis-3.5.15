@@ -45,10 +45,16 @@ public class MapperProxyFactory<T> {
 
   @SuppressWarnings("unchecked")
   protected T newInstance(MapperProxy<T> mapperProxy) {
+    // 实现 mapperInterface
+    // 使用 mapperProxy 作为委托人
     return (T) Proxy.newProxyInstance(mapperInterface.getClassLoader(), new Class[] { mapperInterface }, mapperProxy);
   }
 
+  /**
+   * public 暴露的方法，创建代理对象
+   */
   public T newInstance(SqlSession sqlSession) {
+    // 创建代理的 handler，也就是代理的委托人
     final MapperProxy<T> mapperProxy = new MapperProxy<>(sqlSession, mapperInterface, methodCache);
     return newInstance(mapperProxy);
   }

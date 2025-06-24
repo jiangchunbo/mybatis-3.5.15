@@ -27,6 +27,10 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * 通过 Class 找到 MapperProxyFactory，这个工厂能够生产出 Proxy 代理对象
+ * <p>
+ * 这也是一个注册表
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
@@ -42,10 +46,15 @@ public class MapperRegistry {
 
   @SuppressWarnings("unchecked")
   public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
+    // 给定类型，获得工厂
     final MapperProxyFactory<T> mapperProxyFactory = (MapperProxyFactory<T>) knownMappers.get(type);
+
+    // 没有工厂？报错！
     if (mapperProxyFactory == null) {
       throw new BindingException("Type " + type + " is not known to the MapperRegistry.");
     }
+
+    // 通过工厂创建 Proxy 对象
     try {
       return mapperProxyFactory.newInstance(sqlSession);
     } catch (Exception e) {
@@ -58,16 +67,23 @@ public class MapperRegistry {
   }
 
   public <T> void addMapper(Class<T> type) {
+    // 我希望你是一个接口
     if (type.isInterface()) {
+      // 不许重复注册
       if (hasMapper(type)) {
         throw new BindingException("Type " + type + " is already known to the MapperRegistry.");
       }
+
+      // 先放到 mapper 里面
       boolean loadCompleted = false;
       try {
         knownMappers.put(type, new MapperProxyFactory<>(type));
+
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the
         // mapper parser. If the type is already known, it won't try.
+
+        // 解析注解
         MapperAnnotationBuilder parser = new MapperAnnotationBuilder(config, type);
         parser.parse();
         loadCompleted = true;

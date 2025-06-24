@@ -114,11 +114,23 @@ public class MapperAnnotationBuilder {
 
   public void parse() {
     String resource = type.toString();
+
+    // 检查相关的资源有没有加载，mybatis 认为 XML 属于字段
     if (!configuration.isResourceLoaded(resource)) {
+
+      // 加载 xml 资源
       loadXmlResource();
+
+      // 将 resource 标记为已加载
       configuration.addLoadedResource(resource);
+
+      //
       assistant.setCurrentNamespace(type.getName());
+
+      // 解析缓存
       parseCache();
+
+      // 解析缓存 ref
       parseCacheRef();
       for (Method method : type.getMethods()) {
         if (!canHaveStatement(method)) {
@@ -162,6 +174,9 @@ public class MapperAnnotationBuilder {
     // Spring may not know the real resource name so we check a flag
     // to prevent loading again a resource twice
     // this flag is set at XMLMapperBuilder#bindMapperForNamespace
+
+    // Spring 可能不知道真实的资源名称，所以我们检查标记放置二次加载同一个资源
+    // 这个标记被 XMLMapperBuilder#bindMapperForNamespace 设置
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
       String xmlResource = type.getName().replace('.', '/') + ".xml";
       // #1347
