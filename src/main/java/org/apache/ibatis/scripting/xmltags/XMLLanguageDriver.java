@@ -41,7 +41,12 @@ public class XMLLanguageDriver implements LanguageDriver {
 
   @Override
   public SqlSource createSqlSource(Configuration configuration, XNode script, Class<?> parameterType) {
+
+    // 构建 builder，其实就是个 context，里面存储解析过程中产生的状态，比如 isDynamic
     XMLScriptBuilder builder = new XMLScriptBuilder(configuration, script, parameterType);
+
+    // 解析脚本节点
+    // 其中能够识别出来是 dynamic 还是 raw
     return builder.parseScriptNode();
   }
 

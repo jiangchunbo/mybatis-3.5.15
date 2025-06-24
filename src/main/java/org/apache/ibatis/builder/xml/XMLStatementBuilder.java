@@ -103,6 +103,7 @@ public class XMLStatementBuilder extends BaseBuilder {
               ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
 
+    // 为 MappedStatement 创建 SqlSource
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
 
     // 这句话什么意思，就是说，你的 MyBatis 语句，没写属性 statementType，自动也给你创建 ParepareStatement

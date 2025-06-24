@@ -30,7 +30,7 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.type.JdbcType;
 
 /**
- * Sql 构造器
+ * 这是一个专门解析得到 StaticSqlSource 的类
  *
  * @author Clinton Begin
  */
@@ -43,6 +43,9 @@ public class SqlSourceBuilder extends BaseBuilder {
   }
 
   public SqlSource parse(String originalSql, Class<?> parameterType, Map<String, Object> additionalParameters) {
+
+    // 创建一个 handler，处理 #{} 标记
+    // 实际上就是添加 1 个参数映射，然后返回一个 ?
     ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(configuration, parameterType,
       additionalParameters);
 
@@ -82,6 +85,13 @@ public class SqlSourceBuilder extends BaseBuilder {
     return builder.toString();
   }
 
+
+  /**
+   * 内部私有的静态类。这个类用于处理遇到 token 之后如何处理。
+   * <p>
+   * 这个类实际上做的事情就是，将 token 之间的 content 解析成 ParameterMapping，然后返回一个 "?" 替换原始标记。
+   * <p>
+   */
   private static class ParameterMappingTokenHandler extends BaseBuilder implements TokenHandler {
 
     private final List<ParameterMapping> parameterMappings = new ArrayList<>();

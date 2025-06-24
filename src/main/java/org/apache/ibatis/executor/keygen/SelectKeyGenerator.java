@@ -43,7 +43,11 @@ public class SelectKeyGenerator implements KeyGenerator {
 
   @Override
   public void processBefore(Executor executor, MappedStatement ms, Statement stmt, Object parameter) {
+    // 处理 <selectKey> 标签
+
+    // 如果设置了 order="BEFORE" 是这样吧？
     if (executeBefore) {
+      //
       processGeneratedKeys(executor, ms, parameter);
     }
   }
@@ -58,21 +62,38 @@ public class SelectKeyGenerator implements KeyGenerator {
   private void processGeneratedKeys(Executor executor, MappedStatement ms, Object parameter) {
     try {
       if (parameter != null && keyStatement != null && keyStatement.getKeyProperties() != null) {
+
+        // 主键的属性是什么，比如 ["id"]
         String[] keyProperties = keyStatement.getKeyProperties();
         final Configuration configuration = ms.getConfiguration();
+
+        // 传入的 Java Bean 的操作器
         final MetaObject metaParam = configuration.newMetaObject(parameter);
+
+
         // Do not close keyExecutor.
         // The transaction will be closed by parent executor.
+
+        // 竟然又创建了一个 Executor
         Executor keyExecutor = configuration.newExecutor(executor.getTransaction(), ExecutorType.SIMPLE);
+
+        // Executor 调用某个 SQL 语句，查询下一个记录的主键
         List<Object> values = keyExecutor.query(keyStatement, parameter, RowBounds.DEFAULT, Executor.NO_RESULT_HANDLER);
+
+        // 不能是空记录
         if (values.size() == 0) {
           throw new ExecutorException("SelectKey returned no data.");
         }
+
+        // 也必须只有 1 个记录
         if (values.size() > 1) {
           throw new ExecutorException("SelectKey returned more than one value.");
         } else {
           MetaObject metaResult = configuration.newMetaObject(values.get(0));
+
+          // 如果主键只有一个属性，比如 ["id"]
           if (keyProperties.length == 1) {
+            // 这个 mysql 不会出现吧
             if (metaResult.hasGetter(keyProperties[0])) {
               setValue(metaParam, keyProperties[0], metaResult.getValue(keyProperties[0]));
             } else {
@@ -80,7 +101,9 @@ public class SelectKeyGenerator implements KeyGenerator {
               // so try that
               setValue(metaParam, keyProperties[0], values.get(0));
             }
-          } else {
+          }
+          // 处理主键是“符合主键”
+          else {
             handleMultipleProperties(keyProperties, metaParam, metaResult);
           }
         }

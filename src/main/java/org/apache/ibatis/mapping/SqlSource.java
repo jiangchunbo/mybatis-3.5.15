@@ -22,7 +22,5 @@ package org.apache.ibatis.mapping;
  * @author Clinton Begin
  */
 public interface SqlSource {
-
   BoundSql getBoundSql(Object parameterObject);
-
 }

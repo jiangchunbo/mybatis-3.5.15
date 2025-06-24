@@ -62,12 +62,19 @@ public class XMLScriptBuilder extends BaseBuilder {
     nodeHandlerMap.put("bind", new BindHandler());
   }
 
+  /**
+   * 解析 XML 节点，并产生一些状态
+   */
   public SqlSource parseScriptNode() {
+    // 只需要解析 1 次，所有的状态都会出来
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
+
     SqlSource sqlSource;
     if (isDynamic) {
+      // 检查是否是动态节点，解析过程中只要遇到动态标签，就认为是动态节点v
       sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
     } else {
+      // 第 3 个参数，参数类型，其实是开发者自己 XML 写的那个 parameterType
       sqlSource = new RawSqlSource(configuration, rootSqlNode, parameterType);
     }
     return sqlSource;

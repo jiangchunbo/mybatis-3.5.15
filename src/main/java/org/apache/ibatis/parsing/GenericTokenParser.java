@@ -22,6 +22,10 @@ public class GenericTokenParser {
 
   private final String openToken;
   private final String closeToken;
+
+  /**
+   * Token 处理器。遇到 Token 会怎么处理。
+   */
   private final TokenHandler handler;
 
   public GenericTokenParser(String openToken, String closeToken, TokenHandler handler) {
@@ -73,6 +77,11 @@ public class GenericTokenParser {
           builder.append(src, start, src.length - start);
           offset = src.length;
         } else {
+
+          // 虽然这里写得很通用 open close token
+          // 你就当这里是如何处理 #{} 这种情况
+
+          // 这里是 append 说明返回值是 ? ，将 token 替换为了 ?
           builder.append(handler.handleToken(expression.toString()));
           offset = end + closeToken.length();
         }

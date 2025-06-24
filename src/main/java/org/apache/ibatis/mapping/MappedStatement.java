@@ -44,6 +44,10 @@ public final class MappedStatement {
    * 这里就是那些 Forward only、scroll insensitive、scroll sensitive
    */
   private ResultSetType resultSetType;
+
+  /**
+   * Sql 源，一般这里只有 DynamicSqlSource 或者 RawSqlSource
+   */
   private SqlSource sqlSource;
   private Cache cache;
   private ParameterMap parameterMap;
@@ -321,9 +325,7 @@ public final class MappedStatement {
   }
 
   public BoundSql getBoundSql(Object parameterObject) {
-    // 得到 BoundSql，里面的 #{} 的所有参数都已经解析完毕
-    // 其实里面就是一个 String sql
-    // 还有一些 parameter mapping list
+    // 使用 sqlSource 得到 BoundSql。这里 sqlSource 只有两种情况：DynamicSqlSource 或者 RawSqlSource
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
 
     // 所以，这里才能获取 parameterMappings

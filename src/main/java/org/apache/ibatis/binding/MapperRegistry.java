@@ -83,7 +83,6 @@ public class MapperRegistry {
    * Gets the mappers.
    *
    * @return the mappers
-   *
    * @since 3.2.2
    */
   public Collection<Class<?>> getMappers() {
@@ -93,18 +92,21 @@ public class MapperRegistry {
   /**
    * Adds the mappers.
    *
-   * @param packageName
-   *          the package name
-   * @param superType
-   *          the super type
-   *
+   * @param packageName the package name
+   * @param superType   the super type
    * @since 3.2.2
    */
   public void addMappers(String packageName, Class<?> superType) {
+    // 创建了一个什么解析器，你就理解为 spring 的 scanner 算了
     ResolverUtil<Class<?>> resolverUtil = new ResolverUtil<>();
+
+    // 寻找 isA superType 的
     resolverUtil.find(new ResolverUtil.IsA(superType), packageName);
+
+    // 解析完了，从结果 Set 中提取出来 Class
     Set<Class<? extends Class<?>>> mapperSet = resolverUtil.getClasses();
     for (Class<?> mapperClass : mapperSet) {
+      // 归一，调用 addMapper(Class)
       addMapper(mapperClass);
     }
   }
@@ -112,12 +114,11 @@ public class MapperRegistry {
   /**
    * Adds the mappers.
    *
-   * @param packageName
-   *          the package name
-   *
+   * @param packageName the package name
    * @since 3.2.2
    */
   public void addMappers(String packageName) {
+    // 这里很疯狂，将所有类都是别成 Mapper
     addMappers(packageName, Object.class);
   }
 

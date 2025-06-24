@@ -39,6 +39,8 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * MapperMethod
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
@@ -46,7 +48,14 @@ import org.apache.ibatis.session.SqlSession;
  */
 public class MapperMethod {
 
+  /**
+   * 里面就是 SQL 的 name(一个标识符), 还有一个 SQL 类型
+   */
   private final SqlCommand command;
+
+  /**
+   * 方法签名
+   */
   private final MethodSignature method;
 
   public MapperMethod(Class<?> mapperInterface, Method method, Configuration config) {
@@ -220,9 +229,14 @@ public class MapperMethod {
     private final SqlCommandType type;
 
     public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
+      // 方法名、方法声明类
       final String methodName = method.getName();
       final Class<?> declaringClass = method.getDeclaringClass();
+
+      // 解析得到 ms
       MappedStatement ms = resolveMappedStatement(mapperInterface, methodName, declaringClass, configuration);
+
+
       if (ms == null) {
         if (method.getAnnotation(Flush.class) == null) {
           throw new BindingException(

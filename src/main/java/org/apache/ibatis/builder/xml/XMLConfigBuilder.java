@@ -386,33 +386,56 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析 mappers 标签
+   */
   private void mappersElement(XNode context) throws Exception {
     if (context == null) {
       return;
     }
+
+    // 遍历 mappers 下面的子节点
     for (XNode child : context.getChildren()) {
+
+      // 包扫描
+      // mybatis 也有自己原始的包扫描方式，只是没有 Spring 那么强大而已
+      // 最终都会归一到 addMapper(Class)
       if ("package".equals(child.getName())) {
         String mapperPackage = child.getStringAttribute("name");
         configuration.addMappers(mapperPackage);
-      } else {
+      }
+
+      // 如果不是包扫描
+      else {
         String resource = child.getStringAttribute("resource");
         String url = child.getStringAttribute("url");
         String mapperClass = child.getStringAttribute("class");
+
+        // 如果指定了 resource，那么就是从类里面加载资源
         if (resource != null && url == null && mapperClass == null) {
           ErrorContext.instance().resource(resource);
+
+          // 从类路径加载资源，资源一定是 XML
           try (InputStream inputStream = Resources.getResourceAsStream(resource)) {
             XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource,
                 configuration.getSqlFragments());
             mapperParser.parse();
           }
-        } else if (resource == null && url != null && mapperClass == null) {
+        }
+
+        // 从 URL 加载资源，资源一定是 XML
+        else if (resource == null && url != null && mapperClass == null) {
           ErrorContext.instance().resource(url);
           try (InputStream inputStream = Resources.getUrlAsStream(url)) {
             XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, url,
                 configuration.getSqlFragments());
             mapperParser.parse();
           }
-        } else if (resource == null && url == null && mapperClass != null) {
+        }
+
+        // 如果是 <class> 标签，那么就立即加载！
+        // 然后使用 addMapper(Class)
+        else if (resource == null && url == null && mapperClass != null) {
           Class<?> mapperInterface = Resources.classForName(mapperClass);
           configuration.addMapper(mapperInterface);
         } else {

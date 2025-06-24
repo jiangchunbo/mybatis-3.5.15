@@ -65,6 +65,7 @@ public abstract class BaseStatementHandler implements StatementHandler {
     // 如果是 DML 语句，这里就是 null
     // 因为 DQL 语句会在这里靠前的地方就计算了 boundSql，它们需要用于缓存
     if (boundSql == null) { // issue #435, get the key before calculating the statement
+      // 生成主键
       generateKeys(parameterObject);
       boundSql = mappedStatement.getBoundSql(parameterObject);
     }
@@ -135,6 +136,10 @@ public abstract class BaseStatementHandler implements StatementHandler {
     StatementUtil.applyTransactionTimeout(stmt, queryTimeout, transactionTimeout);
   }
 
+
+  /**
+   * 这是一个如何设置 fetchSize 的策略
+   */
   protected void setFetchSize(Statement stmt) throws SQLException {
     // 与 timeout 类似，遵循先 ms 再 global
     // 如果都没没有找到，那就不设置了
@@ -143,6 +148,8 @@ public abstract class BaseStatementHandler implements StatementHandler {
       stmt.setFetchSize(fetchSize);
       return;
     }
+
+    // 获得默认的 fetchSize
     Integer defaultFetchSize = configuration.getDefaultFetchSize();
     if (defaultFetchSize != null) {
       stmt.setFetchSize(defaultFetchSize);
@@ -160,9 +167,14 @@ public abstract class BaseStatementHandler implements StatementHandler {
   }
 
   protected void generateKeys(Object parameter) {
+    // 获得一个所谓的主键生成器
     KeyGenerator keyGenerator = mappedStatement.getKeyGenerator();
+
     ErrorContext.instance().store();
+
+    // 主键生成器前置操作
     keyGenerator.processBefore(executor, mappedStatement, null, parameter);
+
     ErrorContext.instance().recall();
   }
 

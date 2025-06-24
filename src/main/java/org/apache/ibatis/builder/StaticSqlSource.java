@@ -23,6 +23,8 @@ import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 静态 SqlSource，特别朴实无华的类，接受 SQL 字符串，以及绑定好的参数映射（也可能没有）
+ *
  * @author Clinton Begin
  */
 public class StaticSqlSource implements SqlSource {
