@@ -78,7 +78,7 @@ public class DefaultSqlSession implements SqlSession {
     }
     if (list.size() > 1) {
       throw new TooManyResultsException(
-          "Expected one result (or null) to be returned by selectOne(), but found: " + list.size());
+        "Expected one result (or null) to be returned by selectOne(), but found: " + list.size());
     } else {
       return null;
     }
@@ -94,16 +94,29 @@ public class DefaultSqlSession implements SqlSession {
     return this.selectMap(statement, parameter, mapKey, RowBounds.DEFAULT);
   }
 
+  /**
+   * 查询数据库得到一个 map
+   */
   @Override
   public <K, V> Map<K, V> selectMap(String statement, Object parameter, String mapKey, RowBounds rowBounds) {
+    // 还是依赖于 selectList
     final List<? extends V> list = selectList(statement, parameter, rowBounds);
+
+    //
     final DefaultMapResultHandler<K, V> mapResultHandler = new DefaultMapResultHandler<>(mapKey,
-        configuration.getObjectFactory(), configuration.getObjectWrapperFactory(), configuration.getReflectorFactory());
+      configuration.getObjectFactory(), configuration.getObjectWrapperFactory(), configuration.getReflectorFactory());
+
+    // 创建了一个 Context
     final DefaultResultContext<V> context = new DefaultResultContext<>();
     for (V o : list) {
+      // 把对象 o 放进去，里面会缓存 1 条数据，并且计数 + 1
       context.nextResultObject(o);
+
+      // 将 context 交给 ResultHandler 处理
       mapResultHandler.handleResult(context);
     }
+
+    // 得到处理之后的结果
     return mapResultHandler.getMappedResults();
   }
 
@@ -149,8 +162,13 @@ public class DefaultSqlSession implements SqlSession {
 
   private <E> List<E> selectList(String statement, Object parameter, RowBounds rowBounds, ResultHandler handler) {
     try {
+      // 这里进行 符号引用 --> 直接引用
       MappedStatement ms = configuration.getMappedStatement(statement);
+
+      // 脏了?
       dirty |= ms.isDirtySelect();
+
+      // 执行查询
       return executor.query(ms, wrapCollection(parameter), rowBounds, handler);
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);

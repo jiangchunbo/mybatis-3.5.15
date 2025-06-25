@@ -65,6 +65,8 @@ public abstract class BaseExecutor implements Executor {
   protected BaseExecutor(Configuration configuration, Transaction transaction) {
     this.transaction = transaction;
     this.deferredLoads = new ConcurrentLinkedQueue<>();
+
+    // 这个就是一级缓存
     this.localCache = new PerpetualCache("LocalCache");
     this.localOutputParameterCache = new PerpetualCache("LocalOutputParameterCache");
     this.closed = false;
@@ -151,6 +153,7 @@ public abstract class BaseExecutor implements Executor {
     if (closed) {
       throw new ExecutorException("Executor was closed.");
     }
+
     if (queryStack == 0 && ms.isFlushCacheRequired()) {
       clearLocalCache();
     }
@@ -161,17 +164,23 @@ public abstract class BaseExecutor implements Executor {
       if (list != null) {
         handleLocallyCachedOutputParameters(ms, key, parameter, boundSql);
       } else {
+        // 从数据库层面给查询
         list = queryFromDatabase(ms, parameter, rowBounds, resultHandler, key, boundSql);
       }
     } finally {
       queryStack--;
     }
+
     if (queryStack == 0) {
       for (DeferredLoad deferredLoad : deferredLoads) {
         deferredLoad.load();
       }
       // issue #601
       deferredLoads.clear();
+
+      // 如果 localCacheScope 是语句范围，那么就清空本地缓存
+      // 这里有一个疑问，为什么这里先 put 又 clear
+      // 为什么不直接不要 put
       if (configuration.getLocalCacheScope() == LocalCacheScope.STATEMENT) {
         // issue #482
         clearLocalCache();
@@ -208,11 +217,21 @@ public abstract class BaseExecutor implements Executor {
     if (closed) {
       throw new ExecutorException("Executor was closed.");
     }
+    // CacheKey 到底里面有那些元素呢?
+
     CacheKey cacheKey = new CacheKey();
+
+    // MappedStatement 的标识符 ID
     cacheKey.update(ms.getId());
+
+    // RowBounds
     cacheKey.update(rowBounds.getOffset());
     cacheKey.update(rowBounds.getLimit());
+
+    // 最终解析出来的 SQL 也是一样的
     cacheKey.update(boundSql.getSql());
+
+    //
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
     TypeHandlerRegistry typeHandlerRegistry = ms.getConfiguration().getTypeHandlerRegistry();
     // mimic DefaultParameterHandler logic
@@ -233,9 +252,13 @@ public abstract class BaseExecutor implements Executor {
           }
           value = metaObject.getValue(propertyName);
         }
+
+        // 这个 value 就是参数值，最终的参数值也要一样
         cacheKey.update(value);
       }
     }
+
+    // 不同的环境也要不一样
     if (configuration.getEnvironment() != null) {
       // issue #176
       cacheKey.update(configuration.getEnvironment().getId());
@@ -350,7 +373,10 @@ public abstract class BaseExecutor implements Executor {
       // 删除本地缓存
       localCache.removeObject(key);
     }
+
+    // 放到一级缓存
     localCache.putObject(key, list);
+
     if (ms.getStatementType() == StatementType.CALLABLE) {
       localOutputParameterCache.putObject(key, parameter);
     }

@@ -74,16 +74,25 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
   }
 
   public void processBatch(MappedStatement ms, Statement stmt, Object parameter) {
+    // 获得 key 的属性，有可能多个，难道是这么设置的 key1,key2 ?
     final String[] keyProperties = ms.getKeyProperties();
+
+    // 如果没有设置，算了
     if (keyProperties == null || keyProperties.length == 0) {
       return;
     }
+
+    // 从 Statement 获得一个特殊的结果集 (这里面可以取出主键）
     try (ResultSet rs = stmt.getGeneratedKeys()) {
+      // 元数据
       final ResultSetMetaData rsmd = rs.getMetaData();
       final Configuration configuration = ms.getConfiguration();
+
+      // 如果数据库返回的列比较少，就不正常，没办法满足开发者定义的数据
       if (rsmd.getColumnCount() < keyProperties.length) {
         // Error?
       } else {
+        // 赋值
         assignKeys(configuration, rs, rsmd, keyProperties, parameter);
       }
     } catch (Exception e) {

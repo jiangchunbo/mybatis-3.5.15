@@ -110,8 +110,16 @@ public class Configuration {
   protected boolean multipleResultSetsEnabled = true;
   protected boolean useGeneratedKeys;
   protected boolean useColumnLabel = true;
+
+  /**
+   * 是否开启二级缓存
+   */
   protected boolean cacheEnabled = true;
   protected boolean callSettersOnNulls;
+
+  /**
+   * 是否使用方法签名中的参数，你必须使用 Java 8 编译，并增加 -parameters
+   */
   protected boolean useActualParamName = true;
   protected boolean returnInstanceForEmptyRow;
 
@@ -156,6 +164,10 @@ public class Configuration {
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
   protected final InterceptorChain interceptorChain = new InterceptorChain();
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
+
+  /**
+   * 注册 type alias 类型别名的地方
+   */
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
 
@@ -163,6 +175,10 @@ public class Configuration {
     "Mapped Statements collection")
     .conflictMessageProducer((savedValue, targetValue) -> ". please check " + savedValue.getResource() + " and "
       + targetValue.getResource());
+
+  /**
+   * Key 是 Mapper 的 namespace，Value 就是 Cache 缓存。因此 1 个 Mapper 对应 1 个 Cache
+   */
   protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
   protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
@@ -705,14 +721,19 @@ public class Configuration {
 
   public Executor newExecutor(Transaction transaction, ExecutorType executorType) {
     executorType = executorType == null ? defaultExecutorType : executorType;
+
     Executor executor;
     if (ExecutorType.BATCH == executorType) {
       executor = new BatchExecutor(this, transaction);
     } else if (ExecutorType.REUSE == executorType) {
       executor = new ReuseExecutor(this, transaction);
-    } else {
+    }
+    // 默认使用 simple
+    else {
       executor = new SimpleExecutor(this, transaction);
     }
+
+    // 二级缓存。默认是 true，所以默认都会开启二级缓存。
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }

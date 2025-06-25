@@ -49,39 +49,59 @@ public class ParamNameResolver {
    * <li>aMethod(int a, int b) -&gt; {{0, "0"}, {1, "1"}}</li>
    * <li>aMethod(int a, RowBounds rb, int b) -&gt; {{0, "0"}, {2, "1"}}</li>
    * </ul>
+   * <p>
+   * 这个 map 最终存储的是什么呢，key 是索引 index，value 是参数名
    */
   private final SortedMap<Integer, String> names;
 
   private boolean hasParamAnnotation;
 
   public ParamNameResolver(Configuration config, Method method) {
+    // 获得是否使用实际的参数名
     this.useActualParamName = config.isUseActualParamName();
+
+    // 获得参数类型列表
     final Class<?>[] paramTypes = method.getParameterTypes();
+
+    // 获得方法参数注解，第一维是方法参数，第二维是注解
     final Annotation[][] paramAnnotations = method.getParameterAnnotations();
+
+    // 获得 map
     final SortedMap<Integer, String> map = new TreeMap<>();
+
     int paramCount = paramAnnotations.length;
     // get names from @Param annotations
     for (int paramIndex = 0; paramIndex < paramCount; paramIndex++) {
+      // 是否是特殊参数，如果是 RowBounds 或者 ResultHandler 那么不用处理
       if (isSpecialParameter(paramTypes[paramIndex])) {
         // skip special parameters
         continue;
       }
+
+      // 遍历注解，其实有啥能遍历的呢？不就是关注 @Param
       String name = null;
       for (Annotation annotation : paramAnnotations[paramIndex]) {
         if (annotation instanceof Param) {
+          // 记录一下，参数里面存在 @Param，这个标记只对单个参数有用
           hasParamAnnotation = true;
           name = ((Param) annotation).value();
           break;
         }
       }
+
+      // 如果这里还是 null，说明就没有注解
+      // 有没有可能是一个无效注解比如 @Param ？不可能！因为 Java 注解的规范是，如果注解的字段没有 default 值，则必须提供一个值，否则编译都无法通过
       if (name == null) {
         // @Param was not specified.
         if (useActualParamName) {
+          // 使用来自反射得到的参数名，如果没有使用 Java 8 + -parameter 编译，则这里只能拿到 arg0
           name = getActualParamName(method, paramIndex);
         }
+
         if (name == null) {
           // use the parameter index as the name ("0", "1", ...)
           // gcode issue #71
+          // 如果还是没有名字，只能使用 0 1 2 这种作为名字了
           name = String.valueOf(map.size());
         }
       }
@@ -128,19 +148,29 @@ public class ParamNameResolver {
     // 参数只有 1 个，而且没有注解
     if (!hasParamAnnotation && paramCount == 1) {
       Object value = args[names.firstKey()];
-      // 包装一下如果是多元素
+      // 单个参数。如果是 Collection 或者 Array，那么就包装为 ParamMap
       return wrapToMapIfCollection(value, useActualParamName ? names.get(names.firstKey()) : null);
     }
-    // 其他情况，要不就是有注解，要不就是多元素
+
+    // 其他情况，要不就是有注解，要不就是多个方法参数
     else {
       final Map<String, Object> param = new ParamMap<>();
       int i = 0;
+
+      // 遍历所有的名称，key 是 索引 (0,1,2,...) value 就是参数的名字
       for (Map.Entry<Integer, String> entry : names.entrySet()) {
+
+        // 颠三倒四
+        // key 是参数名, value 是参数值
         param.put(entry.getValue(), args[entry.getKey()]);
+
         // add generic param names (param1, param2, ...)
-        // 添加一些通用的参数名，比如 param1 param2
+        // 添加一些通用的参数名 param1 param2 --> 这种参数名有什么用，可以帮助 mybatis 判断目前有几个参数，比如 Jdbc3KeyGenerator
+        // 但是，我觉得你甚至可以自己使用这种命名，误导 mybatis
         final String genericParamName = GENERIC_NAME_PREFIX + (i + 1);
+
         // ensure not to overwrite parameter named with @Param
+        // 如果之前解析出来没有
         if (!names.containsValue(genericParamName)) {
           param.put(genericParamName, args[entry.getKey()]);
         }

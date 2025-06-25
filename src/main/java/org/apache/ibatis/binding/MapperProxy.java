@@ -31,6 +31,8 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.util.MapUtil;
 
 /**
+ * JDK 动态代理 InvocationHandler
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
@@ -41,6 +43,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     | MethodHandles.Lookup.PACKAGE | MethodHandles.Lookup.PUBLIC;
   private static final Constructor<Lookup> lookupConstructor;
   private static final Method privateLookupInMethod;
+
+  /**
+   * SqlSession
+   */
   private final SqlSession sqlSession;
   private final Class<T> mapperInterface;
   private final Map<Method, MapperMethodInvoker> methodCache;
@@ -163,6 +169,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable {
+      // 通过 MapperMethod 调用
       return mapperMethod.execute(sqlSession, args);
     }
   }

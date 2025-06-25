@@ -22,6 +22,8 @@ import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.CacheException;
 
 /**
+ * 这个不管是一级缓存，还是二级缓存，都用到了
+ *
  * @author Clinton Begin
  */
 public class PerpetualCache implements Cache {

@@ -98,15 +98,21 @@ public class CachingExecutor implements Executor {
 
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler)
-      throws SQLException {
+    throws SQLException {
+    // 立即把参数传进去，计算出最终 SQL
     BoundSql boundSql = ms.getBoundSql(parameterObject);
+
+    // 有了 BoundSql 就能计算出 CacheKey
     CacheKey key = createCacheKey(ms, parameterObject, rowBounds, boundSql);
+
+    // 二级缓存 包裹查询
     return query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
 
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler,
-      CacheKey key, BoundSql boundSql) throws SQLException {
+                           CacheKey key, BoundSql boundSql) throws SQLException {
+    // 获取二级缓存
     Cache cache = ms.getCache();
     if (cache != null) {
       // ms 是否设置了 flushCache
@@ -115,8 +121,12 @@ public class CachingExecutor implements Executor {
       // 是否使用缓存，且没有自定义的 resultHandler
       if (ms.isUseCache() && resultHandler == null) {
         ensureNoOutParams(ms, boundSql);
+
+        // 从 cache 里面检查 key 是否存在
         @SuppressWarnings("unchecked")
         List<E> list = (List<E>) transactionalCacheManager.getObject(cache, key);
+
+        // 如果没有命中，那么就看一级缓存
         if (list == null) {
           // 还是委托
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
@@ -155,8 +165,8 @@ public class CachingExecutor implements Executor {
       for (ParameterMapping parameterMapping : boundSql.getParameterMappings()) {
         if (parameterMapping.getMode() != ParameterMode.IN) {
           throw new ExecutorException(
-              "Caching stored procedures with OUT params is not supported.  Please configure useCache=false in "
-                  + ms.getId() + " statement.");
+            "Caching stored procedures with OUT params is not supported.  Please configure useCache=false in "
+              + ms.getId() + " statement.");
         }
       }
     }
@@ -174,7 +184,7 @@ public class CachingExecutor implements Executor {
 
   @Override
   public void deferLoad(MappedStatement ms, MetaObject resultObject, String property, CacheKey key,
-      Class<?> targetType) {
+                        Class<?> targetType) {
     delegate.deferLoad(ms, resultObject, property, key, targetType);
   }
 
