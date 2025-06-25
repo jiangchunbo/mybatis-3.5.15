@@ -160,8 +160,12 @@ public abstract class BaseExecutor implements Executor {
     List<E> list;
     try {
       queryStack++;
+
+      // ResultHandler 绝对不能使用本地缓存
+
       list = resultHandler == null ? (List<E>) localCache.getObject(key) : null;
       if (list != null) {
+        // 本地缓存命中
         handleLocallyCachedOutputParameters(ms, key, parameter, boundSql);
       } else {
         // 从数据库层面给查询
