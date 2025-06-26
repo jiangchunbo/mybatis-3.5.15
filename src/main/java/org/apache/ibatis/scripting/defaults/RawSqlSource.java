@@ -28,14 +28,19 @@ import org.apache.ibatis.session.Configuration;
 /**
  * Static SqlSource. It is faster than {@link DynamicSqlSource} because mappings are calculated during startup.
  *
- * @since 3.2.0
- *
  * @author Eduardo Macarron
+ * @since 3.2.0
  */
 public class RawSqlSource implements SqlSource {
 
   private final SqlSource sqlSource;
 
+  /**
+   *
+   * @param configuration 配置
+   * @param rootSqlNode   说白了就是 {@link org.apache.ibatis.scripting.xmltags.MixedSqlNode}
+   * @param parameterType 参数类型
+   */
   public RawSqlSource(Configuration configuration, SqlNode rootSqlNode, Class<?> parameterType) {
     this(configuration, getSql(configuration, rootSqlNode), parameterType);
   }
@@ -50,7 +55,7 @@ public class RawSqlSource implements SqlSource {
   }
 
   /**
-   * 私有方法，将一个 XML 的节点转换为 SQL
+   * 私有方法，将顶级 SqlNode 解析得到 SQL，其中 ${} 会完全替换掉
    */
   private static String getSql(Configuration configuration, SqlNode rootSqlNode) {
     DynamicContext context = new DynamicContext(configuration, null);

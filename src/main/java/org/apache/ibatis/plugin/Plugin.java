@@ -15,6 +15,9 @@
  */
 package org.apache.ibatis.plugin;
 
+import org.apache.ibatis.reflection.ExceptionUtil;
+import org.apache.ibatis.util.MapUtil;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -22,9 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.ibatis.reflection.ExceptionUtil;
-import org.apache.ibatis.util.MapUtil;
 
 /**
  * @author Clinton Begin
@@ -40,6 +40,12 @@ public class Plugin implements InvocationHandler {
    * 这个 Plugin 背后的 interceptor
    */
   private final Interceptor interceptor;
+
+  /**
+   * 这个 Plugin 可以用于切入的类，以及它们的方法
+   * <p>
+   * 个人觉得这个也可以存储为 Set<Method>，然后如果执行的方法处于 Set 中，那么就可以
+   */
   private final Map<Class<?>, Set<Method>> signatureMap;
 
   private Plugin(Object target, Interceptor interceptor, Map<Class<?>, Set<Method>> signatureMap) {
@@ -48,6 +54,9 @@ public class Plugin implements InvocationHandler {
     this.signatureMap = signatureMap;
   }
 
+  /**
+   * 静态方法。用于将 target 和拦截器绑定在一起
+   */
   public static Object wrap(Object target, Interceptor interceptor) {
     // 获取签名的映射，
     // 没仔细看，估计 key 是那几大可以切入的类型吧
@@ -92,20 +101,20 @@ public class Plugin implements InvocationHandler {
   }
 
   private static Map<Class<?>, Set<Method>> getSignatureMap(Interceptor interceptor) {
-    // 获得 Intercepts 拦截器
+    // 获得开发人员自己实现的拦截器上面的 @Intercepts 注解
     Intercepts interceptsAnnotation = interceptor.getClass().getAnnotation(Intercepts.class);
 
     // issue #251
     // 如果没有这个注解，那么错误
     if (interceptsAnnotation == null) {
       throw new PluginException(
-          "No @Intercepts annotation was found in interceptor " + interceptor.getClass().getName());
+        "No @Intercepts annotation was found in interceptor " + interceptor.getClass().getName());
     }
 
-    // @Intercepts 只有一个属性 values
+    // 获得 @Intercepts 属性 —— @Signature
     Signature[] sigs = interceptsAnnotation.value();
 
-    //
+    // 维护了 @Signature 的 Class<?> -> Set<Method>
     Map<Class<?>, Set<Method>> signatureMap = new HashMap<>();
     for (Signature sig : sigs) {
       // 得到一个容器，初次是空，但绝对不是 null
@@ -118,7 +127,7 @@ public class Plugin implements InvocationHandler {
       } catch (NoSuchMethodException e) {
         // 找不到方法也很严重，说明用户写错了
         throw new PluginException("Could not find method on " + sig.type() + " named " + sig.method() + ". Cause: " + e,
-            e);
+          e);
       }
     }
     return signatureMap;

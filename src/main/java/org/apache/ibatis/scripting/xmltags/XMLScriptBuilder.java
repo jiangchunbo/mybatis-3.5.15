@@ -66,6 +66,7 @@ public class XMLScriptBuilder extends BaseBuilder {
    * 解析 XML 节点，并产生一些状态
    */
   public SqlSource parseScriptNode() {
+    // 得到顶级元素
     // 只需要解析 1 次，所有的状态都会出来
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
 

@@ -18,6 +18,10 @@ package org.apache.ibatis.plugin;
 import java.util.Properties;
 
 /**
+ * 拦截器。
+ *
+ * 怎么理解这个类，拦截器能够拦截一个方法调用，并嵌入特定的逻辑；而且，它也可以
+ *
  * @author Clinton Begin
  */
 public interface Interceptor {

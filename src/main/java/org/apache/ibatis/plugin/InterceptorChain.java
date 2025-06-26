@@ -32,7 +32,7 @@ public class InterceptorChain {
   /**
    * 这个方法会由其他可以 AOP 切入的类进行调用
    *
-   * @param target 准备植入插件的对象
+   * @param target 准备切的对象
    */
   public Object pluginAll(Object target) {
     // 遍历每个拦截器

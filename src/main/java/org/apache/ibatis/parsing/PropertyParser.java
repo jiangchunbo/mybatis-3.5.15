@@ -59,13 +59,19 @@ public class PropertyParser {
   }
 
   private static class VariableTokenHandler implements TokenHandler {
+
+    /**
+     * 属性，用于占位符替换
+     */
     private final Properties variables;
     private final boolean enableDefaultValue;
     private final String defaultValueSeparator;
 
     private VariableTokenHandler(Properties variables) {
       this.variables = variables;
+      // 是否开启使用默认值。默认值在哪呢，默认值在 content 里
       this.enableDefaultValue = Boolean.parseBoolean(getPropertyValue(KEY_ENABLE_DEFAULT_VALUE, ENABLE_DEFAULT_VALUE));
+      // 默认值的分隔符，默认是 : 。那么意思可能就是说，如果 value 是 abc:xyz，那么就是说
       this.defaultValueSeparator = getPropertyValue(KEY_DEFAULT_VALUE_SEPARATOR, DEFAULT_VALUE_SEPARATOR);
     }
 
@@ -77,21 +83,29 @@ public class PropertyParser {
     public String handleToken(String content) {
       if (variables != null) {
         String key = content;
+
         if (enableDefaultValue) {
           final int separatorIndex = content.indexOf(defaultValueSeparator);
           String defaultValue = null;
           if (separatorIndex >= 0) {
+            // 截取 key
             key = content.substring(0, separatorIndex);
+
+            // 截取默认值(从分隔符 + 分隔符大小这个 index 开始)
             defaultValue = content.substring(separatorIndex + defaultValueSeparator.length());
           }
           if (defaultValue != null) {
             return variables.getProperty(key, defaultValue);
           }
         }
+
+        // 如果包含这个属性，那么就返回
         if (variables.containsKey(key)) {
           return variables.getProperty(key);
         }
       }
+
+      // 没有这个属性，那么原样返回
       return "${" + content + "}";
     }
   }

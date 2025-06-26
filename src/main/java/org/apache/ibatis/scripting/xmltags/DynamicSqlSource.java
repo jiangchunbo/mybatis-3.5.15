@@ -28,6 +28,12 @@ public class DynamicSqlSource implements SqlSource {
   private final Configuration configuration;
   private final SqlNode rootSqlNode;
 
+
+  /**
+   * 对于 DynamicSqlSource 来说，它只是将 SqlNode 存储起来，等后续传入参数了，再进行静态化
+   * @param configuration 配置
+   * @param rootSqlNode   顶级 SqlNode
+   */
   public DynamicSqlSource(Configuration configuration, SqlNode rootSqlNode) {
     this.configuration = configuration;
     this.rootSqlNode = rootSqlNode;
