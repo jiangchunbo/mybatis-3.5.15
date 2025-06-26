@@ -70,8 +70,8 @@ public class XMLScriptBuilder extends BaseBuilder {
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
 
     SqlSource sqlSource;
+    // 什么是动态标签？出现 ${...} 或者任何动态标签
     if (isDynamic) {
-      // 检查是否是动态节点，解析过程中只要遇到动态标签，就认为是动态节点v
       sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
     } else {
       // 第 3 个参数，参数类型，其实是开发者自己 XML 写的那个 parameterType
@@ -85,9 +85,17 @@ public class XMLScriptBuilder extends BaseBuilder {
     NodeList children = node.getNode().getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
       XNode child = node.newXNode(children.item(i));
+
+      // 如果是一个 CDATA，或者是一个纯文本节点
       if (child.getNode().getNodeType() == Node.CDATA_SECTION_NODE || child.getNode().getNodeType() == Node.TEXT_NODE) {
+
+        // 获得字符串
         String data = child.getStringBody("");
+
+        // script -> TextSqlNode
         TextSqlNode textSqlNode = new TextSqlNode(data);
+
+        // 判断普通文本是否是动态 sql，也就是包含 ${...}
         if (textSqlNode.isDynamic()) {
           contents.add(textSqlNode);
           isDynamic = true;
@@ -95,11 +103,16 @@ public class XMLScriptBuilder extends BaseBuilder {
           contents.add(new StaticTextSqlNode(data));
         }
       } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628
+        // 处理其他元素节点，只要出现合法的 XML 节点，就也认为是 dynamic
         String nodeName = child.getNode().getNodeName();
+
+        // 提前注册了好了，其他标签都是不合法的
         NodeHandler handler = nodeHandlerMap.get(nodeName);
         if (handler == null) {
           throw new BuilderException("Unknown element <" + nodeName + "> in SQL statement.");
         }
+
+        // 处理
         handler.handleNode(child, contents);
         isDynamic = true;
       }

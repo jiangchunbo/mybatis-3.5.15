@@ -38,6 +38,9 @@ public class TextSqlNode implements SqlNode {
     this.injectionFilter = injectionFilter;
   }
 
+  /**
+   * 判断 script 是不是动态 sql
+   */
   public boolean isDynamic() {
     DynamicCheckerTokenParser checker = new DynamicCheckerTokenParser();
     GenericTokenParser parser = createParser(checker);
@@ -45,8 +48,12 @@ public class TextSqlNode implements SqlNode {
     return checker.isDynamic();
   }
 
+  /**
+   * 传入一个 Context，实际上就是给解析器一个地方可以存放中间产物，或者最终产物
+   */
   @Override
   public boolean apply(DynamicContext context) {
+    //
     GenericTokenParser parser = createParser(new BindingTokenParser(context, injectionFilter));
     context.appendSql(parser.parse(text));
     return true;

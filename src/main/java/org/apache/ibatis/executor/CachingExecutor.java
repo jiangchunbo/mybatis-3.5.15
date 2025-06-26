@@ -105,7 +105,7 @@ public class CachingExecutor implements Executor {
     // 有了 BoundSql 就能计算出 CacheKey
     CacheKey key = createCacheKey(ms, parameterObject, rowBounds, boundSql);
 
-    // 二级缓存 包裹查询
+    // 看下面这个方法
     return query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
 

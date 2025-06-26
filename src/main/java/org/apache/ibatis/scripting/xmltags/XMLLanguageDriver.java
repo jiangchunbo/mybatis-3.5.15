@@ -57,9 +57,14 @@ public class XMLLanguageDriver implements LanguageDriver {
       XPathParser parser = new XPathParser(script, false, configuration.getVariables(), new XMLMapperEntityResolver());
       return createSqlSource(configuration, parser.evalNode("/script"), parameterType);
     }
+
     // issue #127
+    // 似乎能够解析 script 里面的 ${} 将变量替换掉
     script = PropertyParser.parse(script, configuration.getVariables());
+
+    // 创建一个 TextSqlNode，这应该是一个 Root 了吧
     TextSqlNode textSqlNode = new TextSqlNode(script);
+
     if (textSqlNode.isDynamic()) {
       return new DynamicSqlSource(configuration, textSqlNode);
     } else {

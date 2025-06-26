@@ -171,6 +171,7 @@ public abstract class BaseExecutor implements Executor {
         // 从数据库层面给查询
         list = queryFromDatabase(ms, parameter, rowBounds, resultHandler, key, boundSql);
       }
+
     } finally {
       queryStack--;
     }

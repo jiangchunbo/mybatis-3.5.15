@@ -121,11 +121,23 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
   }
 
+  /**
+   * 其实就是创建一个新的缓存，然后把它添加到了 configuration 里面，然后赋值给 currentCache
+   */
   public Cache useNewCache(Class<? extends Cache> typeClass, Class<? extends Cache> evictionClass, Long flushInterval,
                            Integer size, boolean readWrite, boolean blocking, Properties props) {
-    Cache cache = new CacheBuilder(currentNamespace).implementation(valueOrDefault(typeClass, PerpetualCache.class))
-      .addDecorator(valueOrDefault(evictionClass, LruCache.class)).clearInterval(flushInterval).size(size)
-      .readWrite(readWrite).blocking(blocking).properties(props).build();
+    Cache cache = new CacheBuilder(currentNamespace)
+      // 缓存的实现类
+      .implementation(valueOrDefault(typeClass, PerpetualCache.class))
+      // 缓存的失效类
+      .addDecorator(valueOrDefault(evictionClass, LruCache.class))
+      // flush 间隔
+      .clearInterval(flushInterval)
+      .size(size)
+      .readWrite(readWrite)
+      .blocking(blocking)
+      .properties(props)
+      .build();
     configuration.addCache(cache);
     currentCache = cache;
     return cache;

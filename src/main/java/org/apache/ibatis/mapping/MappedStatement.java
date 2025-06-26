@@ -49,6 +49,10 @@ public final class MappedStatement {
    * Sql 源，一般这里只有 DynamicSqlSource 或者 RawSqlSource
    */
   private SqlSource sqlSource;
+
+  /**
+   * 如果配置了 cache，应该会在 ms 构造的时候，给这个属性赋值吧
+   */
   private Cache cache;
   private ParameterMap parameterMap;
   private List<ResultMap> resultMaps;

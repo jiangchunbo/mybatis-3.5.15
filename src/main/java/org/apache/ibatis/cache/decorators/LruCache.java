@@ -22,6 +22,7 @@ import org.apache.ibatis.cache.Cache;
 
 /**
  * Lru (least recently used) cache decorator.
+ * LRU 缓存
  *
  * @author Clinton Begin
  */
@@ -52,7 +53,11 @@ public class LruCache implements Cache {
 
       @Override
       protected boolean removeEldestEntry(Map.Entry<Object, Object> eldest) {
+        // size 就是这个方法传进来的 size，表示 maxSize
+        // 如果当前大小超过了 maxSize
         boolean tooBig = size() > size;
+
+        // 就需要淘汰
         if (tooBig) {
           eldestKey = eldest.getKey();
         }
@@ -86,7 +91,10 @@ public class LruCache implements Cache {
   }
 
   private void cycleKeyList(Object key) {
+    // 放一个 key 不知道干嘛
     keyMap.put(key, key);
+
+    // 如果发现了需要 evict 的 key，那么就删除它
     if (eldestKey != null) {
       delegate.removeObject(eldestKey);
       eldestKey = null;

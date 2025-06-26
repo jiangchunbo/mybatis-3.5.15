@@ -48,7 +48,7 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   public XMLStatementBuilder(Configuration configuration, MapperBuilderAssistant builderAssistant, XNode context,
-      String databaseId) {
+                             String databaseId) {
     super(configuration);
     this.builderAssistant = builderAssistant;
     this.context = context;
@@ -92,15 +92,16 @@ public class XMLStatementBuilder extends BaseBuilder {
     String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX;
     // 然后再加一个命名空间
     keyStatementId = builderAssistant.applyCurrentNamespace(keyStatementId, true);
-    // 这里面应该缓存了大量 key statement id 使用何种 key generator
+
+    // 检查是否配置中存在映射的 KeyGenerator
     if (configuration.hasKeyGenerator(keyStatementId)) {
       keyGenerator = configuration.getKeyGenerator(keyStatementId);
     } else {
       // 要不就是自己配了 useGeneratedKeys
       // 要不就是走全局的 use generated keys
       keyGenerator = context.getBooleanAttribute("useGeneratedKeys",
-          configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType))
-              ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
+        configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType))
+        ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
 
     // 为 MappedStatement 创建 SqlSource
@@ -108,7 +109,7 @@ public class XMLStatementBuilder extends BaseBuilder {
 
     // 这句话什么意思，就是说，你的 MyBatis 语句，没写属性 statementType，自动也给你创建 ParepareStatement
     StatementType statementType = StatementType
-        .valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
+      .valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
     Integer fetchSize = context.getIntAttribute("fetchSize");
     Integer timeout = context.getIntAttribute("timeout");
     String parameterMap = context.getStringAttribute("parameterMap");
@@ -129,8 +130,8 @@ public class XMLStatementBuilder extends BaseBuilder {
     boolean dirtySelect = context.getBooleanAttribute("affectData", Boolean.FALSE);
 
     builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType, fetchSize, timeout, parameterMap,
-        parameterTypeClass, resultMap, resultTypeClass, resultSetTypeEnum, flushCache, useCache, resultOrdered,
-        keyGenerator, keyProperty, keyColumn, databaseId, langDriver, resultSets, dirtySelect);
+      parameterTypeClass, resultMap, resultTypeClass, resultSetTypeEnum, flushCache, useCache, resultOrdered,
+      keyGenerator, keyProperty, keyColumn, databaseId, langDriver, resultSets, dirtySelect);
   }
 
   private void processSelectKeyNodes(String id, Class<?> parameterTypeClass, LanguageDriver langDriver) {
@@ -146,7 +147,7 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   private void parseSelectKeyNodes(String parentId, List<XNode> list, Class<?> parameterTypeClass,
-      LanguageDriver langDriver, String skRequiredDatabaseId) {
+                                   LanguageDriver langDriver, String skRequiredDatabaseId) {
 
     // 遍历所有的 <selectKey>
     for (XNode nodeToHandle : list) {
@@ -161,12 +162,16 @@ public class XMLStatementBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析 selectKey 节点
+   */
   private void parseSelectKeyNode(String id, XNode nodeToHandle, Class<?> parameterTypeClass, LanguageDriver langDriver,
-      String databaseId) {
+                                  String databaseId) {
     String resultType = nodeToHandle.getStringAttribute("resultType");
     Class<?> resultTypeClass = resolveClass(resultType);
-    StatementType statementType = StatementType
-        .valueOf(nodeToHandle.getStringAttribute("statementType", StatementType.PREPARED.toString()));
+
+    // 解析获得 StatementType
+    StatementType statementType = StatementType.valueOf(nodeToHandle.getStringAttribute("statementType", StatementType.PREPARED.toString()));
     String keyProperty = nodeToHandle.getStringAttribute("keyProperty");
     String keyColumn = nodeToHandle.getStringAttribute("keyColumn");
     boolean executeBefore = "BEFORE".equals(nodeToHandle.getStringAttribute("order", "AFTER"));
@@ -182,13 +187,17 @@ public class XMLStatementBuilder extends BaseBuilder {
     String resultMap = null;
     ResultSetType resultSetTypeEnum = null;
 
+    // 解析生成 SqlSource (Dynamic or Raw ?)
     SqlSource sqlSource = langDriver.createSqlSource(configuration, nodeToHandle, parameterTypeClass);
+
+    // <selectKey> 一定是 Select 类型
     SqlCommandType sqlCommandType = SqlCommandType.SELECT;
 
     builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType, fetchSize, timeout, parameterMap,
-        parameterTypeClass, resultMap, resultTypeClass, resultSetTypeEnum, flushCache, useCache, resultOrdered,
-        keyGenerator, keyProperty, keyColumn, databaseId, langDriver, null, false);
+      parameterTypeClass, resultMap, resultTypeClass, resultSetTypeEnum, flushCache, useCache, resultOrdered,
+      keyGenerator, keyProperty, keyColumn, databaseId, langDriver, null, false);
 
+    // 追加 namespace
     id = builderAssistant.applyCurrentNamespace(id, false);
 
     MappedStatement keyStatement = configuration.getMappedStatement(id, false);
