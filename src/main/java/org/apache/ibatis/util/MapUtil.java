@@ -26,7 +26,7 @@ public class MapUtil {
    * This class should be removed once we drop Java 8 support.
    *
    * @see <a href=
-   *      "https://bugs.openjdk.java.net/browse/JDK-8161372">https://bugs.openjdk.java.net/browse/JDK-8161372</a>
+   * "https://bugs.openjdk.java.net/browse/JDK-8161372">https://bugs.openjdk.java.net/browse/JDK-8161372</a>
    */
   public static <K, V> V computeIfAbsent(Map<K, V> map, K key, Function<K, V> mappingFunction) {
     V value = map.get(key);
