@@ -25,6 +25,7 @@ import org.apache.ibatis.session.Configuration;
  * @author Clinton Begin
  */
 public class ForEachSqlNode implements SqlNode {
+
   public static final String ITEM_PREFIX = "__frch_";
 
   private final ExpressionEvaluator evaluator;
@@ -40,11 +41,11 @@ public class ForEachSqlNode implements SqlNode {
 
   /**
    * @deprecated Since 3.5.9, use the
-   *             {@link #ForEachSqlNode(Configuration, SqlNode, String, Boolean, String, String, String, String, String)}.
+   * {@link #ForEachSqlNode(Configuration, SqlNode, String, Boolean, String, String, String, String, String)}.
    */
   @Deprecated
   public ForEachSqlNode(Configuration configuration, SqlNode contents, String collectionExpression, String index,
-      String item, String open, String close, String separator) {
+                        String item, String open, String close, String separator) {
     this(configuration, contents, collectionExpression, null, index, item, open, close, separator);
   }
 
@@ -52,7 +53,7 @@ public class ForEachSqlNode implements SqlNode {
    * @since 3.5.9
    */
   public ForEachSqlNode(Configuration configuration, SqlNode contents, String collectionExpression, Boolean nullable,
-      String index, String item, String open, String close, String separator) {
+                        String index, String item, String open, String close, String separator) {
     this.evaluator = new ExpressionEvaluator();
     this.collectionExpression = collectionExpression;
     this.nullable = nullable;
@@ -69,7 +70,7 @@ public class ForEachSqlNode implements SqlNode {
   public boolean apply(DynamicContext context) {
     Map<String, Object> bindings = context.getBindings();
     final Iterable<?> iterable = evaluator.evaluateIterable(collectionExpression, bindings,
-        Optional.ofNullable(nullable).orElseGet(configuration::isNullableOnForEach));
+      Optional.ofNullable(nullable).orElseGet(configuration::isNullableOnForEach));
     if (iterable == null || !iterable.iterator().hasNext()) {
       return true;
     }
@@ -144,7 +145,7 @@ public class ForEachSqlNode implements SqlNode {
     private final String item;
 
     public FilteredDynamicContext(Configuration configuration, DynamicContext delegate, String itemIndex, String item,
-        int i) {
+                                  int i) {
       super(configuration, null);
       this.delegate = delegate;
       this.index = i;
