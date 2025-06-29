@@ -25,26 +25,28 @@ import java.util.List;
 public class InterceptorChain {
 
   /**
-   * 所有拦截器
+   * 所有注册的拦截器
    */
   private final List<Interceptor> interceptors = new ArrayList<>();
 
   /**
    * 这个方法会由其他可以 AOP 切入的类进行调用
    *
-   * @param target 准备切的对象
+   * @param target 被代理的对象
    */
   public Object pluginAll(Object target) {
     // 遍历每个拦截器
     for (Interceptor interceptor : interceptors) {
-      // 植入插件，得到一个新的对象
-      // 应该是一个代理对象
-      // 这儿的 plugin 其实是个接口 default 方法。直接调用了 Plugin.wrap 方法
+      // 编织，可能得到一个新对象
+      // 如果这个拦截器不支持编织这个对象，那么就返回原始对象
       target = interceptor.plugin(target);
     }
     return target;
   }
 
+  /**
+   * 这个方法一般就是被 Configuration 调用
+   */
   public void addInterceptor(Interceptor interceptor) {
     interceptors.add(interceptor);
   }

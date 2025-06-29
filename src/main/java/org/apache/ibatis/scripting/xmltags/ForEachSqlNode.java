@@ -111,6 +111,7 @@ public class ForEachSqlNode implements SqlNode {
   private void applyIndex(DynamicContext context, Object o, int i) {
     if (index != null) {
       context.bind(index, o);
+      // 构建类似于 __frch_item_0 参数名
       context.bind(itemizeItem(index, i), o);
     }
   }
@@ -135,6 +136,8 @@ public class ForEachSqlNode implements SqlNode {
   }
 
   private static String itemizeItem(String item, int i) {
+    // 假设 item 名称就是 item
+    // 那么，这里返回值就是 __frch_item_0 之类的
     return ITEM_PREFIX + item + "_" + i;
   }
 

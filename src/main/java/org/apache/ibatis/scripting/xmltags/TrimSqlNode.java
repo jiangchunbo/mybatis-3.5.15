@@ -54,7 +54,9 @@ public class TrimSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    // 构造了一个 Context，接收原始 Context 参数
     FilteredDynamicContext filteredDynamicContext = new FilteredDynamicContext(context);
+    // 解析
     boolean result = contents.apply(filteredDynamicContext);
     filteredDynamicContext.applyAll();
     return result;
@@ -78,6 +80,9 @@ public class TrimSqlNode implements SqlNode {
     private boolean suffixApplied;
     private StringBuilder sqlBuffer;
 
+    /**
+     * 类似于一个拷贝构造器
+     */
     public FilteredDynamicContext(DynamicContext delegate) {
       super(configuration, null);
       this.delegate = delegate;
@@ -90,6 +95,7 @@ public class TrimSqlNode implements SqlNode {
       sqlBuffer = new StringBuilder(sqlBuffer.toString().trim());
       String trimmedUppercaseSql = sqlBuffer.toString().toUpperCase(Locale.ENGLISH);
       if (trimmedUppercaseSql.length() > 0) {
+        // 前缀和后缀
         applyPrefix(sqlBuffer, trimmedUppercaseSql);
         applySuffix(sqlBuffer, trimmedUppercaseSql);
       }

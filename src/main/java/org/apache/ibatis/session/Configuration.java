@@ -162,6 +162,10 @@ public class Configuration {
   protected Class<?> configurationFactory;
 
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
+
+  /**
+   * 拦截器注册中心
+   */
   protected final InterceptorChain interceptorChain = new InterceptorChain();
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
 
@@ -737,6 +741,8 @@ public class Configuration {
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }
+
+    // 创建代理对象
     return (Executor) interceptorChain.pluginAll(executor);
   }
 
@@ -883,7 +889,13 @@ public class Configuration {
     return sqlFragments;
   }
 
+  /**
+   * 注册插件；注册拦截器
+   *
+   * @param interceptor 拦截器对象
+   */
   public void addInterceptor(Interceptor interceptor) {
+    // 委托给 InterceptorChain
     interceptorChain.addInterceptor(interceptor);
   }
 

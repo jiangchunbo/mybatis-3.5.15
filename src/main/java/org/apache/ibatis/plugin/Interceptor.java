@@ -18,16 +18,22 @@ package org.apache.ibatis.plugin;
 import java.util.Properties;
 
 /**
- * 拦截器。
- *
- * 怎么理解这个类，拦截器能够拦截一个方法调用，并嵌入特定的逻辑；而且，它也可以
+ * MyBatis 插件机制的核心类，所以插件就是拦截器。
+ * <p>
+ * 这个类的设计跟 Spring AOP 的 MethodInterceptor 相似
  *
  * @author Clinton Begin
  */
 public interface Interceptor {
 
+  /**
+   * 这其实是一种 Around Advice
+   */
   Object intercept(Invocation invocation) throws Throwable;
 
+  /**
+   * 编织
+   */
   default Object plugin(Object target) {
     // 一个静态方法，意思就是用 this 拦截器，去增强 target 对象
     // 与 Spring 的思想差不多，target 就是被增强的对象

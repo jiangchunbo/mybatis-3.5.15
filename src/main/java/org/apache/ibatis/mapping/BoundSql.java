@@ -37,6 +37,10 @@ public class BoundSql {
   private final String sql;
   private final List<ParameterMapping> parameterMappings;
   private final Object parameterObject;
+
+  /**
+   * 额外的参数
+   */
   private final Map<String, Object> additionalParameters;
   private final MetaObject metaParameters;
 
@@ -45,6 +49,7 @@ public class BoundSql {
     this.sql = sql;
     this.parameterMappings = parameterMappings;
     this.parameterObject = parameterObject;
+    // 额外的参数，先创建好 HashMap
     this.additionalParameters = new HashMap<>();
     this.metaParameters = configuration.newMetaObject(additionalParameters);
   }
