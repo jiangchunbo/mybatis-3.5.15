@@ -208,6 +208,7 @@ public class Configuration {
   }
 
   public Configuration() {
+    // 注册 TransactionFactory，也就两个类型 JDBC 和 MANAGED
     typeAliasRegistry.registerAlias("JDBC", JdbcTransactionFactory.class);
     typeAliasRegistry.registerAlias("MANAGED", ManagedTransactionFactory.class);
 

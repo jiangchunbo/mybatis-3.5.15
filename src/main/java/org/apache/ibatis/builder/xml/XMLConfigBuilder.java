@@ -299,18 +299,33 @@ public class XMLConfigBuilder extends BaseBuilder {
     configuration.setNullableOnForEach(booleanValueOf(props.getProperty("nullableOnForEach"), false));
   }
 
+  /**
+   * 解析 environments 标签
+   */
   private void environmentsElement(XNode context) throws Exception {
     if (context == null) {
       return;
     }
+
+    // 从 environments 中获取 default 属性
     if (environment == null) {
       environment = context.getStringAttribute("default");
     }
+
+    // 遍历下面的子节点，其实就是 1 个或多个 environment
     for (XNode child : context.getChildren()) {
+      // 获得 id 属性，也就是环境的标识符
       String id = child.getStringAttribute("id");
+
+      // 这里其实就是遍历过程中，判断 id 是不是开发者设置的 default
       if (isSpecifiedEnvironment(id)) {
+
+        // 解析事务工厂，没啥东西，里面一定有个 type，要不就是 JDBC 要不就是 MANAGED
         TransactionFactory txFactory = transactionManagerElement(child.evalNode("transactionManager"));
+
+        // 解析数据源
         DataSourceFactory dsFactory = dataSourceElement(child.evalNode("dataSource"));
+
         DataSource dataSource = dsFactory.getDataSource();
         Environment.Builder environmentBuilder = new Environment.Builder(id).transactionFactory(txFactory)
           .dataSource(dataSource);
@@ -342,6 +357,7 @@ public class XMLConfigBuilder extends BaseBuilder {
 
   private TransactionFactory transactionManagerElement(XNode context) throws Exception {
     if (context != null) {
+      // 获得 type，这不是完全限定名，比如 JDBC
       String type = context.getStringAttribute("type");
       Properties props = context.getChildrenAsProperties();
       TransactionFactory factory = (TransactionFactory) resolveClass(type).getDeclaredConstructor().newInstance();
