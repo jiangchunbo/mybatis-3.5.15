@@ -32,11 +32,30 @@ import org.w3c.dom.NodeList;
  */
 public class XNode {
 
+  /**
+   * 重点包装的对象 org.w3c.dom.Node
+   */
   private final Node node;
+
+  /**
+   * 冗余字段，节点的名称
+   */
   private final String name;
   private final String body;
+
+  /**
+   * 冗余字段，节点的属性
+   */
   private final Properties attributes;
+
+  /**
+   * 外部传入的变量
+   */
   private final Properties variables;
+
+  /**
+   * 外部传入的变量，用于 XPath 语法解析 XML
+   */
   private final XPathParser xpathParser;
 
   public XNode(XPathParser xpathParser, Node node, Properties variables) {
@@ -268,9 +287,14 @@ public class XNode {
 
   public Properties getChildrenAsProperties() {
     Properties properties = new Properties();
+
+    // 因为 properties 可能有子节点 比如 <property>
     for (XNode child : getChildren()) {
+      // 类似于 key-value 键值对
       String name = child.getStringAttribute("name");
       String value = child.getStringAttribute("value");
+
+      // 如果两个都有值，就设置属性
       if (name != null && value != null) {
         properties.setProperty(name, value);
       }
@@ -325,10 +349,13 @@ public class XNode {
 
   private Properties parseAttributes(Node n) {
     Properties attributes = new Properties();
+    // 获得节点的属性
     NamedNodeMap attributeNodes = n.getAttributes();
     if (attributeNodes != null) {
       for (int i = 0; i < attributeNodes.getLength(); i++) {
         Node attribute = attributeNodes.item(i);
+
+        // 使用属性解析器得到 value
         String value = PropertyParser.parse(attribute.getNodeValue(), variables);
         attributes.put(attribute.getNodeName(), value);
       }

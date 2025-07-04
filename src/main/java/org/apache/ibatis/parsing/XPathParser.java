@@ -211,7 +211,10 @@ public class XPathParser {
   }
 
   public XNode evalNode(Object root, String expression) {
+    // 底层依赖 Java 自带的 XPath 解析得到 Node
     Node node = (Node) evaluate(expression, root, XPathConstants.NODE);
+
+    // 可能没配，没配就不解析
     if (node == null) {
       return null;
     }

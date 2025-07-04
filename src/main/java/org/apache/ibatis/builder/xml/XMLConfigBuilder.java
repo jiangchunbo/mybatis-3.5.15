@@ -53,7 +53,14 @@ import org.apache.ibatis.type.JdbcType;
  */
 public class XMLConfigBuilder extends BaseBuilder {
 
+  /**
+   * 一个标志，用于控制不能反复解析
+   */
   private boolean parsed;
+
+  /**
+   * 以 XPath 语法解析 XML
+   */
   private final XPathParser parser;
   private String environment;
   private final ReflectorFactory localReflectorFactory = new DefaultReflectorFactory();
@@ -67,11 +74,13 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   public XMLConfigBuilder(Reader reader, String environment, Properties props) {
+    // 硬编码传入了一个 Configuration.class，这表示这个 Builder 以后将会诞生一个 Configuration 对象
     this(Configuration.class, reader, environment, props);
   }
 
   public XMLConfigBuilder(Class<? extends Configuration> configClass, Reader reader, String environment,
                           Properties props) {
+    // 创建一个 XPathReader，用于读取资源
     this(configClass, new XPathParser(reader, true, props, new XMLMapperEntityResolver()), environment, props);
   }
 
@@ -94,29 +103,46 @@ public class XMLConfigBuilder extends BaseBuilder {
 
   private XMLConfigBuilder(Class<? extends Configuration> configClass, XPathParser parser, String environment,
                            Properties props) {
+    // 调用无参构造器创建 Configuration 对象
     super(newConfig(configClass));
     ErrorContext.instance().resource("SQL Mapper Configuration");
     this.configuration.setVariables(props);
+
+    // 初始化为暂未解析，等待调用 parsed
     this.parsed = false;
     this.environment = environment;
     this.parser = parser;
   }
 
   public Configuration parse() {
+    // 一个简单布尔变量 parsed
     if (parsed) {
       throw new BuilderException("Each XMLConfigBuilder can only be used once.");
     }
     parsed = true;
-    parseConfiguration(parser.evalNode("/configuration"));
+
+    // 解析得到顶级节点
+    XNode root = parser.evalNode("/configuration");
+
+    // 将这个节点传给方法，进行解析
+    parseConfiguration(root);
+
     return configuration;
   }
 
   private void parseConfiguration(XNode root) {
     try {
       // issue #117 read properties first
+      // 从 root 节点开始，解析 properties 节点
       propertiesElement(root.evalNode("properties"));
+
+      // 从 root 节点开始，解析 settings 节点，这里只是解析得到了一些属性
       Properties settings = settingsAsProperties(root.evalNode("settings"));
+
+      // 设置默认的 VFS 虚拟文件系统
       loadCustomVfsImpl(settings);
+
+      //
       loadCustomLogImpl(settings);
       typeAliasesElement(root.evalNode("typeAliases"));
       pluginsElement(root.evalNode("plugins"));
@@ -135,13 +161,21 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   private Properties settingsAsProperties(XNode context) {
+    // 如果没有配置 setting，就创建一个空的属性返回
     if (context == null) {
       return new Properties();
     }
+
+    // 跟之前 properties 调用的方法一样，也是获取 name value
     Properties props = context.getChildrenAsProperties();
+
     // Check that all settings are known to the configuration class
+    // 竟然构造了一个 Configuration
     MetaClass metaConfig = MetaClass.forClass(Configuration.class, localReflectorFactory);
+
+    // 遍历所有的 setting 子项
     for (Object key : props.keySet()) {
+      // 如果没有 setter 方法，就是设置了非法属性，需要报错
       if (!metaConfig.hasSetter(String.valueOf(key))) {
         throw new BuilderException(
           "The setting " + key + " is not known.  Make sure you spelled it correctly (case sensitive).");
@@ -151,10 +185,13 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   private void loadCustomVfsImpl(Properties props) throws ClassNotFoundException {
+    // 获取 VFS 的实现类
     String value = props.getProperty("vfsImpl");
     if (value == null) {
       return;
     }
+
+    //
     String[] clazzes = value.split(",");
     for (String clazz : clazzes) {
       if (!clazz.isEmpty()) {
@@ -239,26 +276,43 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   private void propertiesElement(XNode context) throws Exception {
+    // 没有配 properties 节点
     if (context == null) {
       return;
     }
+
+    // 解析得到一些键值对
     Properties defaults = context.getChildrenAsProperties();
+
+    // 接下来就是获取 resource 或者 url
     String resource = context.getStringAttribute("resource");
     String url = context.getStringAttribute("url");
+
+    // 你不能两个都设置，不然搞不清楚
     if (resource != null && url != null) {
       throw new BuilderException(
         "The properties element cannot specify both a URL and a resource based property file reference.  Please specify one or the other.");
     }
+
+    // 如果你设置了 resource，那么从类路径读取资源
     if (resource != null) {
       defaults.putAll(Resources.getResourceAsProperties(resource));
-    } else if (url != null) {
+    }
+    // 如果你设置了 url，那么从 url 读取资源
+    else if (url != null) {
       defaults.putAll(Resources.getUrlAsProperties(url));
     }
+
+    // 获得变量，放进去
     Properties vars = configuration.getVariables();
     if (vars != null) {
       defaults.putAll(vars);
     }
+
+    // 把属性，也给 parser 分享分享
     parser.setVariables(defaults);
+
+    // 重新赋值 configuration 的 variables
     configuration.setVariables(defaults);
   }
 

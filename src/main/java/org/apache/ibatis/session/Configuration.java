@@ -131,6 +131,10 @@ public class Configuration {
   protected boolean argNameBasedConstructorAutoMapping;
 
   protected String logPrefix;
+
+  /**
+   * 日志实现类
+   */
   protected Class<? extends Log> logImpl;
   protected Class<? extends VFS> vfsImpl;
   protected Class<?> defaultSqlProviderType;

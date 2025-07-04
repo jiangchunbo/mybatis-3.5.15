@@ -27,10 +27,25 @@ import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
 
 /**
  * Builds {@link SqlSession} instances.
+ * <p>
+ * 这是一个 Builder 看起来是一个建造者模式，其实没什么可建造的，只有各种这样的 build 重载方法而已
+ * <p>
+ * 支持以下的配置文件来源
+ * <ul>
+ *   <li>Reader</li>
+ *   <li>InputStream</li>
+ *   <li>Configuration</li>
+ * </ul>
  *
  * @author Clinton Begin
  */
 public class SqlSessionFactoryBuilder {
+
+  // 所有的 build 方法无非就是 environment properties 这两个参数可有可无，若隐若现地出现
+  // 要不就是配置 environment
+  // 要不就是配置 properties
+  // 要不就是两个都配置 environment + properties
+  // environment 不配置就是 null
 
   public SqlSessionFactory build(Reader reader) {
     return build(reader, null, null);
@@ -46,8 +61,16 @@ public class SqlSessionFactoryBuilder {
 
   public SqlSessionFactory build(Reader reader, String environment, Properties properties) {
     try {
+      // MyBatis 的名字可能历史原型一直不是那么准确
+
+      // 这里叫 Builder，实际上是一个解析器，用于解析配置文件
+
+      // 创建一个 Parser，然后调用器 parse 方法，解析完得到一个 Configuration 对象
       XMLConfigBuilder parser = new XMLConfigBuilder(reader, environment, properties);
+
+      // 将 Configuration 对象交给 DefaultSqlSessionFactory 构造器
       return build(parser.parse());
+
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error building SqlSession.", e);
     } finally {

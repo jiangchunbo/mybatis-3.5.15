@@ -62,6 +62,9 @@ public class DynamicContext {
     bindings.put(name, value);
   }
 
+  /**
+   * 追加 SQL 片段
+   */
   public void appendSql(String sql) {
     sqlBuilder.add(sql);
   }
