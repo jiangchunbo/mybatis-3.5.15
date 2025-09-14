@@ -16,6 +16,8 @@
 package org.apache.ibatis.session;
 
 /**
+ * 结果上下文。其实主要就是为了包装一个 Result 对象，还有一些其他统计值、状态等。
+ *
  * @author Clinton Begin
  */
 public interface ResultContext<T> {
