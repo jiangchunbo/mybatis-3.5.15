@@ -62,7 +62,9 @@ public class XMLConfigBuilder extends BaseBuilder {
    * 以 XPath 语法解析 XML
    */
   private final XPathParser parser;
+
   private String environment;
+
   private final ReflectorFactory localReflectorFactory = new DefaultReflectorFactory();
 
   public XMLConfigBuilder(Reader reader) {
@@ -207,12 +209,18 @@ public class XMLConfigBuilder extends BaseBuilder {
     configuration.setLogImpl(logImpl);
   }
 
+  /**
+   * 解析 <typeAliases></typeAliases> 节点
+   *
+   * @param context MyBatis DOM 包装
+   */
   private void typeAliasesElement(XNode context) {
     if (context == null) {
       return;
     }
     for (XNode child : context.getChildren()) {
       if ("package".equals(child.getName())) {
+        // 扫描这个 package
         String typeAliasPackage = child.getStringAttribute("name");
         configuration.getTypeAliasRegistry().registerAliases(typeAliasPackage);
       } else {
@@ -231,7 +239,6 @@ public class XMLConfigBuilder extends BaseBuilder {
       }
     }
   }
-
 
   /**
    * 解析 plugins 节点

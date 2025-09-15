@@ -133,25 +133,50 @@ public class TypeAliasRegistry {
     registerAliases(packageName, Object.class);
   }
 
+  /**
+   * 扫描 package
+   * <p>
+   * 其实只有一个地方调用这个方法，而且第 2 个参数是 Object
+   *
+   * @param packageName 包名
+   * @param superType   关心超类
+   */
   public void registerAliases(String packageName, Class<?> superType) {
     ResolverUtil<Class<?>> resolverUtil = new ResolverUtil<>();
+
+    // find 寻找，第 1 个参数是一个断言器
     resolverUtil.find(new ResolverUtil.IsA(superType), packageName);
+
+    // 获取 result
     Set<Class<? extends Class<?>>> typeSet = resolverUtil.getClasses();
     for (Class<?> type : typeSet) {
       // Ignore inner classes and interfaces (including package-info.java)
       // Skip also inner classes. See issue #6
+
+      // 扫描之后还要过滤
+      // 不能是匿名类、不能是接口、不能是成员类
       if (!type.isAnonymousClass() && !type.isInterface() && !type.isMemberClass()) {
         registerAlias(type);
       }
     }
   }
 
+  /**
+   * 优先使用注解，其次用 SimpleName
+   *
+   * @param type 类型
+   */
   public void registerAlias(Class<?> type) {
+    // 获得在这个类型的 SimpleName -> 但是待会会转换为小写
     String alias = type.getSimpleName();
+
+    // 检查是否有注解，如果有注解，就优先用注解的
     Alias aliasAnnotation = type.getAnnotation(Alias.class);
     if (aliasAnnotation != null) {
       alias = aliasAnnotation.value();
     }
+
+
     registerAlias(alias, type);
   }
 
@@ -159,11 +184,15 @@ public class TypeAliasRegistry {
     if (alias == null) {
       throw new TypeException("The parameter alias cannot be null");
     }
+
     // issue #748
+    // 将别名都转化为小写
     String key = alias.toLowerCase(Locale.ENGLISH);
+
+    // 如果已经存在这个 alias，那么不能注册，需要报错
     if (typeAliases.containsKey(key) && typeAliases.get(key) != null && !typeAliases.get(key).equals(value)) {
       throw new TypeException(
-          "The alias '" + alias + "' is already mapped to the value '" + typeAliases.get(key).getName() + "'.");
+        "The alias '" + alias + "' is already mapped to the value '" + typeAliases.get(key).getName() + "'.");
     }
     typeAliases.put(key, value);
   }
@@ -180,7 +209,6 @@ public class TypeAliasRegistry {
    * Gets the type aliases.
    *
    * @return the type aliases
-   *
    * @since 3.2.2
    */
   public Map<String, Class<?>> getTypeAliases() {

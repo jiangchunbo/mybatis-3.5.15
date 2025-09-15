@@ -55,8 +55,14 @@ import org.apache.ibatis.session.Configuration;
 public final class TypeHandlerRegistry {
 
   private final Map<JdbcType, TypeHandler<?>> jdbcTypeHandlerMap = new EnumMap<>(JdbcType.class);
+
+  /**
+   * JavaType -> JdbcType -> TypeHandler
+   */
   private final Map<Type, Map<JdbcType, TypeHandler<?>>> typeHandlerMap = new ConcurrentHashMap<>();
+
   private final TypeHandler<Object> unknownTypeHandler;
+
   private final Map<Class<?>, TypeHandler<?>> allTypeHandlersMap = new HashMap<>();
 
   private static final Map<JdbcType, TypeHandler<?>> NULL_TYPE_HANDLER_MAP = Collections.emptyMap();
@@ -73,9 +79,7 @@ public final class TypeHandlerRegistry {
   /**
    * The constructor that pass the MyBatis configuration.
    *
-   * @param configuration
-   *          a MyBatis configuration
-   *
+   * @param configuration a MyBatis configuration
    * @since 3.5.4
    */
   public TypeHandlerRegistry(Configuration configuration) {
@@ -110,7 +114,7 @@ public final class TypeHandlerRegistry {
     register(JdbcType.DOUBLE, new DoubleTypeHandler());
 
     register(Reader.class, new ClobReaderTypeHandler());
-    register(String.class, new StringTypeHandler());
+    register(String.class, new StringTypeHandler()); // 用来兜底
     register(String.class, JdbcType.CHAR, new StringTypeHandler());
     register(String.class, JdbcType.CLOB, new ClobTypeHandler());
     register(String.class, JdbcType.VARCHAR, new StringTypeHandler());
@@ -185,9 +189,7 @@ public final class TypeHandlerRegistry {
    * Set a default {@link TypeHandler} class for {@link Enum}. A default {@link TypeHandler} is
    * {@link org.apache.ibatis.type.EnumTypeHandler}.
    *
-   * @param typeHandler
-   *          a type handler class for {@link Enum}
-   *
+   * @param typeHandler a type handler class for {@link Enum}
    * @since 3.4.5
    */
   public void setDefaultEnumTypeHandler(Class<? extends TypeHandler> typeHandler) {
@@ -374,6 +376,9 @@ public final class TypeHandlerRegistry {
   }
 
   private <T> void register(Type javaType, TypeHandler<? extends T> typeHandler) {
+    // 注册 TypeHandler，但是只有 javaType 没有 jdbcType
+
+    // 从注解中尝试寻找
     MappedJdbcTypes mappedJdbcTypes = typeHandler.getClass().getAnnotation(MappedJdbcTypes.class);
     if (mappedJdbcTypes != null) {
       for (JdbcType handledJdbcType : mappedJdbcTypes.value()) {
@@ -469,11 +474,18 @@ public final class TypeHandlerRegistry {
     }
   }
 
-  // scan
-
+  /**
+   * 给定 packageName 扫描其中的 TypeHandler
+   *
+   * @param packageName 包名
+   */
   public void register(String packageName) {
     ResolverUtil<Class<?>> resolverUtil = new ResolverUtil<>();
+
+    // find 类型必须是 TypeHandler
     resolverUtil.find(new ResolverUtil.IsA(TypeHandler.class), packageName);
+
+    // 获取扫描结果
     Set<Class<? extends Class<?>>> handlerSet = resolverUtil.getClasses();
     for (Class<?> type : handlerSet) {
       // Ignore inner classes and interfaces (including package-info.java) and abstract classes
@@ -489,7 +501,6 @@ public final class TypeHandlerRegistry {
    * Gets the type handlers.
    *
    * @return the type handlers
-   *
    * @since 3.2.2
    */
   public Collection<TypeHandler<?>> getTypeHandlers() {

@@ -21,6 +21,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
+ * 类型处理器，主要就是 get 和 set，get 就是从 ResultSet 获取对象，set 就是向 PreparedStatement 设置参数
+ *
  * @author Clinton Begin
  */
 public interface TypeHandler<T> {
@@ -30,15 +32,10 @@ public interface TypeHandler<T> {
   /**
    * Gets the result.
    *
-   * @param rs
-   *          the rs
-   * @param columnName
-   *          Column name, when configuration <code>useColumnLabel</code> is <code>false</code>
-   *
+   * @param rs         the rs
+   * @param columnName Column name, when configuration <code>useColumnLabel</code> is <code>false</code>
    * @return the result
-   *
-   * @throws SQLException
-   *           the SQL exception
+   * @throws SQLException the SQL exception
    */
   T getResult(ResultSet rs, String columnName) throws SQLException;
 
