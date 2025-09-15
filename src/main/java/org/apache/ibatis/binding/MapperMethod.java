@@ -91,7 +91,8 @@ public class MapperMethod {
         else if (method.returnsMany()) {
           result = executeForMany(sqlSession, args);
         }
-        // 如果方法返回是 Map
+
+        // 如果方法返回是 Map ( 其实有个隐含条件，就是 @MapKey )
         else if (method.returnsMap()) {
           result = executeForMap(sqlSession, args);
         }
@@ -116,7 +117,7 @@ public class MapperMethod {
     }
     if (result == null && method.getReturnType().isPrimitive() && !method.returnsVoid()) {
       throw new BindingException("Mapper method '" + command.getName()
-          + "' attempted to return null from a method with a primitive return type (" + method.getReturnType() + ").");
+        + "' attempted to return null from a method with a primitive return type (" + method.getReturnType() + ").");
     }
     return result;
   }
@@ -133,7 +134,7 @@ public class MapperMethod {
       result = rowCount > 0;
     } else {
       throw new BindingException(
-          "Mapper method '" + command.getName() + "' has an unsupported return type: " + method.getReturnType());
+        "Mapper method '" + command.getName() + "' has an unsupported return type: " + method.getReturnType());
     }
     return result;
   }
@@ -141,10 +142,10 @@ public class MapperMethod {
   private void executeWithResultHandler(SqlSession sqlSession, Object[] args) {
     MappedStatement ms = sqlSession.getConfiguration().getMappedStatement(command.getName());
     if (!StatementType.CALLABLE.equals(ms.getStatementType())
-        && void.class.equals(ms.getResultMaps().get(0).getType())) {
+      && void.class.equals(ms.getResultMaps().get(0).getType())) {
       throw new BindingException(
-          "method " + command.getName() + " needs either a @ResultMap annotation, a @ResultType annotation,"
-              + " or a resultType attribute in XML so a ResultHandler can be used as a parameter.");
+        "method " + command.getName() + " needs either a @ResultMap annotation, a @ResultType annotation,"
+          + " or a resultType attribute in XML so a ResultHandler can be used as a parameter.");
     }
     Object param = method.convertArgsToSqlCommandParam(args);
     if (method.hasRowBounds()) {
@@ -206,6 +207,9 @@ public class MapperMethod {
     return array;
   }
 
+  /**
+   * 处理返回值是 Map 的情况。有可能你是想返回 1 条记录，但是将其封装为 Map，也有可能你是返回多行，将其组成一个映射。
+   */
   private <K, V> Map<K, V> executeForMap(SqlSession sqlSession, Object[] args) {
     Map<K, V> result;
     Object param = method.convertArgsToSqlCommandParam(args);
@@ -235,6 +239,7 @@ public class MapperMethod {
   public static class SqlCommand {
 
     private final String name;
+
     private final SqlCommandType type;
 
     public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
@@ -245,11 +250,10 @@ public class MapperMethod {
       // 解析得到 ms
       MappedStatement ms = resolveMappedStatement(mapperInterface, methodName, declaringClass, configuration);
 
-
       if (ms == null) {
         if (method.getAnnotation(Flush.class) == null) {
           throw new BindingException(
-              "Invalid bound statement (not found): " + mapperInterface.getName() + "." + methodName);
+            "Invalid bound statement (not found): " + mapperInterface.getName() + "." + methodName);
         }
         name = null;
         type = SqlCommandType.FLUSH;
@@ -271,7 +275,7 @@ public class MapperMethod {
     }
 
     private MappedStatement resolveMappedStatement(Class<?> mapperInterface, String methodName, Class<?> declaringClass,
-        Configuration configuration) {
+                                                   Configuration configuration) {
       String statementId = mapperInterface.getName() + "." + methodName;
       if (configuration.hasStatement(statementId)) {
         return configuration.getMappedStatement(statementId);
@@ -289,19 +293,32 @@ public class MapperMethod {
       }
       return null;
     }
+
   }
 
   public static class MethodSignature {
 
     private final boolean returnsMany;
+
+    /**
+     * 是否返回 Map。并不是说返回值是 Map 就是 true，同时还需要有 @MapKey 注解
+     */
     private final boolean returnsMap;
+
     private final boolean returnsVoid;
+
     private final boolean returnsCursor;
+
     private final boolean returnsOptional;
+
     private final Class<?> returnType;
+
     private final String mapKey;
+
     private final Integer resultHandlerIndex;
+
     private final Integer rowBoundsIndex;
+
     private final ParamNameResolver paramNameResolver;
 
     public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
@@ -317,7 +334,11 @@ public class MapperMethod {
       this.returnsMany = configuration.getObjectFactory().isCollection(this.returnType) || this.returnType.isArray();
       this.returnsCursor = Cursor.class.equals(this.returnType);
       this.returnsOptional = Optional.class.equals(this.returnType);
+
+      // 是否设置了 mapKey
       this.mapKey = getMapKey(method);
+
+      // 如果设置了 mapKey，那么就是返回 Map
       this.returnsMap = this.mapKey != null;
       this.rowBoundsIndex = getUniqueParamIndex(method, RowBounds.class);
       this.resultHandlerIndex = getUniqueParamIndex(method, ResultHandler.class);
@@ -371,7 +392,6 @@ public class MapperMethod {
      * return whether return type is {@code java.util.Optional}.
      *
      * @return return {@code true}, if return type is {@code java.util.Optional}
-     *
      * @since 3.5.0
      */
     public boolean returnsOptional() {
@@ -385,7 +405,7 @@ public class MapperMethod {
         if (paramType.isAssignableFrom(argTypes[i])) {
           if (index != null) {
             throw new BindingException(
-                method.getName() + " cannot have multiple " + paramType.getSimpleName() + " parameters");
+              method.getName() + " cannot have multiple " + paramType.getSimpleName() + " parameters");
           }
           index = i;
         }
@@ -397,9 +417,19 @@ public class MapperMethod {
       return mapKey;
     }
 
+    /**
+     * Method 返回值只有是 Map 且具有 @MapKey 注解时，就会返回 map key
+     *
+     * @param method 待考察的方法
+     * @return 如果满足条件，则返回需要作为 Key 的字符串；否则，返回 null
+     */
     private String getMapKey(Method method) {
       String mapKey = null;
+
+      // 如果 method 的返回值类型是 Map
       if (Map.class.isAssignableFrom(method.getReturnType())) {
+
+        // 进一步获取方法注解 @MapKey，如果存在，则返回
         final MapKey mapKeyAnnotation = method.getAnnotation(MapKey.class);
         if (mapKeyAnnotation != null) {
           mapKey = mapKeyAnnotation.value();
@@ -407,6 +437,7 @@ public class MapperMethod {
       }
       return mapKey;
     }
+
   }
 
 }

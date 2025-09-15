@@ -25,30 +25,51 @@ import org.apache.ibatis.session.ResultContext;
 import org.apache.ibatis.session.ResultHandler;
 
 /**
+ * 一种特殊的 ResultHandler，用于处理 @MapKey 的情况
+ *
  * @author Clinton Begin
  */
 public class DefaultMapResultHandler<K, V> implements ResultHandler<V> {
 
   private final Map<K, V> mappedResults;
+
   private final String mapKey;
+
   private final ObjectFactory objectFactory;
+
   private final ObjectWrapperFactory objectWrapperFactory;
+
   private final ReflectorFactory reflectorFactory;
 
+  /**
+   *
+   * @param mapKey               返回值 Map 的 Key
+   * @param objectFactory        ObjectFactory
+   * @param objectWrapperFactory ObjectWrapperFactory
+   * @param reflectorFactory     ReflectorFactory
+   */
   @SuppressWarnings("unchecked")
   public DefaultMapResultHandler(String mapKey, ObjectFactory objectFactory, ObjectWrapperFactory objectWrapperFactory,
-      ReflectorFactory reflectorFactory) {
+                                 ReflectorFactory reflectorFactory) {
     this.objectFactory = objectFactory;
     this.objectWrapperFactory = objectWrapperFactory;
     this.reflectorFactory = reflectorFactory;
+
+    // 实际上创建了一个 HashMap
     this.mappedResults = objectFactory.create(Map.class);
     this.mapKey = mapKey;
   }
 
   @Override
   public void handleResult(ResultContext<? extends V> context) {
+    // 获取这一行的对象
     final V value = context.getResultObject();
+
+    // 构造 MetaObject
     final MetaObject mo = MetaObject.forObject(value, objectFactory, objectWrapperFactory, reflectorFactory);
+
+    // 通过 mapKey 访问这个对象的属性
+
     // TODO is that assignment always true?
     final K key = (K) mo.getValue(mapKey);
     mappedResults.put(key, value);
@@ -57,4 +78,5 @@ public class DefaultMapResultHandler<K, V> implements ResultHandler<V> {
   public Map<K, V> getMappedResults() {
     return mappedResults;
   }
+
 }

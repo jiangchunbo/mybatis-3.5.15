@@ -76,6 +76,8 @@ public class DefaultSqlSession implements SqlSession {
     if (list.size() == 1) {
       return list.get(0);
     }
+
+    // 如果期望得到一个对象，但是返回了 2 个，就会这样
     if (list.size() > 1) {
       throw new TooManyResultsException(
         "Expected one result (or null) to be returned by selectOne(), but found: " + list.size());
@@ -99,7 +101,7 @@ public class DefaultSqlSession implements SqlSession {
    */
   @Override
   public <K, V> Map<K, V> selectMap(String statement, Object parameter, String mapKey, RowBounds rowBounds) {
-    // 还是依赖于 selectList
+    // 依赖于 selectList
     final List<? extends V> list = selectList(statement, parameter, rowBounds);
 
     //
@@ -113,10 +115,11 @@ public class DefaultSqlSession implements SqlSession {
       context.nextResultObject(o);
 
       // 将 context 交给 ResultHandler 处理
+      // 向 HashMap 里面 put K V
       mapResultHandler.handleResult(context);
     }
 
-    // 得到处理之后的结果
+    // 得到 HashMap
     return mapResultHandler.getMappedResults();
   }
 
