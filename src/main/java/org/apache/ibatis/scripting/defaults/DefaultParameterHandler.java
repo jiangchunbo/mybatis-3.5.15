@@ -83,6 +83,9 @@ public class DefaultParameterHandler implements ParameterHandler {
             }
             value = metaObject.getValue(propertyName);
           }
+
+
+          // 检查开发者有没有自己配置 TypeHandler
           TypeHandler typeHandler = parameterMapping.getTypeHandler();
           JdbcType jdbcType = parameterMapping.getJdbcType();
           if (value == null && jdbcType == null) {

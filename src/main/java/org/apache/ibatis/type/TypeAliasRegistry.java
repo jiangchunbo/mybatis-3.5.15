@@ -121,6 +121,7 @@ public class TypeAliasRegistry {
       if (typeAliases.containsKey(key)) {
         value = (Class<T>) typeAliases.get(key);
       } else {
+        // 如果 typeAliases 这个 Map 找不到，就加载 Class
         value = (Class<T>) Resources.classForName(string);
       }
       return value;

@@ -237,7 +237,11 @@ public class XMLMapperBuilder extends BaseBuilder {
         Integer numericScale = parameterNode.getIntAttribute("numericScale");
         ParameterMode modeEnum = resolveParameterMode(mode);
         Class<?> javaTypeClass = resolveClass(javaType);
+
+        // 将字符串 jdbcType 解析为 JdbcType 枚举
         JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
+
+        // 解析 typeHandler。可能是 alias 也可能是完全限定名
         Class<? extends TypeHandler<?>> typeHandlerClass = resolveClass(typeHandler);
         ParameterMapping parameterMapping = builderAssistant.buildParameterMapping(parameterClass, property,
             javaTypeClass, jdbcTypeEnum, resultMap, modeEnum, typeHandlerClass, numericScale);
