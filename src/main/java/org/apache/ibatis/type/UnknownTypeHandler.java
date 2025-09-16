@@ -67,7 +67,10 @@ public class UnknownTypeHandler extends BaseTypeHandler<Object> {
   @Override
   public void setNonNullParameter(PreparedStatement ps, int i, Object parameter, JdbcType jdbcType)
       throws SQLException {
+    // 由于我们不知道 TypeHandler，因此这里会进行解析
     TypeHandler handler = resolveTypeHandler(parameter, jdbcType);
+
+    // 使用一个新的 TypeHandler 解析参数 (委托思想)
     handler.setParameter(ps, i, parameter, jdbcType);
   }
 
