@@ -22,7 +22,7 @@ import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.CacheException;
 
 /**
- * 这个不管是一级缓存，还是二级缓存，都用到了
+ * Perpetual 是永久的意思，也就是这个缓存不会考虑清除的事情，它只是简单地将数据存储到 HashMap 中
  *
  * @author Clinton Begin
  */
@@ -30,6 +30,9 @@ public class PerpetualCache implements Cache {
 
   private final String id;
 
+  /**
+   * 缓存存储的地方。没有使用 ConcurrentHashMap，因为外围会有锁机制
+   */
   private final Map<Object, Object> cache = new HashMap<>();
 
   public PerpetualCache(String id) {

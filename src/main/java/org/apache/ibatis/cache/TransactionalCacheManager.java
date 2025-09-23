@@ -45,10 +45,23 @@ public class TransactionalCacheManager {
   }
 
   public Object getObject(Cache cache, CacheKey key) {
+    // 获取 Cache 空间，获取缓存
     return getTransactionalCache(cache).getObject(key);
   }
 
+  /**
+   * 这个方法是缓存对象的关键
+   *
+   * @param cache 缓存对象
+   * @param key   缓存的 key
+   * @param value 缓存的值
+   */
   public void putObject(Cache cache, CacheKey key, Object value) {
+
+    // 对于同一个 Cache 不同事务有自己的 Cache 空间
+
+    // 其实是找到 Cache 空间，然后向其中一个 HashMap 添加一个元素
+
     getTransactionalCache(cache).putObject(key, value);
   }
 
@@ -64,7 +77,6 @@ public class TransactionalCacheManager {
     }
   }
 
-
   /**
    * 好多方法都通过这个方法寻找 TransactionalCache
    */
@@ -72,6 +84,9 @@ public class TransactionalCacheManager {
     // 这个 computeIfAbsent API 设计得挺费解的
     // 第二个入参是 TransactionalCache::new，其实等价于 new TransactionalCache(cache)
     // 构造器的参数就是接收的 cache
+
+
+    // TransactionalCache 你可以理解为一个缓存上下文
     return MapUtil.computeIfAbsent(transactionalCaches, cache, TransactionalCache::new);
   }
 

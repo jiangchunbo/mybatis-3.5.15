@@ -89,6 +89,7 @@ public class BlockingCache implements Cache {
   private void acquireLock(Object key) {
     CountDownLatch newLatch = new CountDownLatch(1);
     while (true) {
+      // 如果 putIfAbsent 返回值是 null，说明之前没有值，也就是加锁成功
       CountDownLatch latch = locks.putIfAbsent(key, newLatch);
       if (latch == null) {
         break;

@@ -67,7 +67,7 @@ public class TransactionalCache implements Cache {
 
 
   /**
-   * 获得缓存
+   * 获得缓存。如果没有命中，就添加到 entriesMissedInCache
    */
   @Override
   public Object getObject(Object key) {
@@ -92,7 +92,7 @@ public class TransactionalCache implements Cache {
 
   @Override
   public void putObject(Object key, Object object) {
-    //
+    // 其实就是向 HashMap 添加一个元素
     entriesToAddOnCommit.put(key, object);
   }
 

@@ -45,7 +45,6 @@ public class CachingExecutor implements Executor {
    */
   private final Executor delegate;
 
-
   /**
    * 事务缓存管理器
    */
@@ -130,6 +129,8 @@ public class CachingExecutor implements Executor {
         if (list == null) {
           // 还是委托
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
+
+          // 将缓存
           transactionalCacheManager.putObject(cache, key, list); // issue #578 and #116
         }
         return list;

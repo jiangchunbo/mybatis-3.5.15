@@ -52,9 +52,13 @@ public class SerializedCache implements Cache {
 
   @Override
   public void putObject(Object key, Object object) {
+    // 判断能否序列化
+    // 只是一个初步判断，因为可能外层对象是 ArrayList，里面的对象无法序列化
     if ((object != null) && !(object instanceof Serializable)) {
       throw new CacheException("SharedCache failed to make a copy of a non-serializable object: " + object);
     }
+
+    // 将对象序列化为 byte[] 之后存储
     delegate.putObject(key, serialize((Serializable) object));
   }
 
