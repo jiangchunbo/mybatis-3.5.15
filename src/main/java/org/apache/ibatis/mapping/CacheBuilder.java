@@ -146,6 +146,12 @@ public class CacheBuilder {
     }
   }
 
+  /**
+   * 有一点点像责任链的写法
+   *
+   * @param cache 最里层的 cache
+   * @return 层层包裹的 cache
+   */
   private Cache setStandardDecorators(Cache cache) {
     try {
       MetaObject metaCache = SystemMetaObject.forObject(cache);
