@@ -46,7 +46,7 @@ public class CachingExecutor implements Executor {
   private final Executor delegate;
 
   /**
-   * 事务缓存管理器
+   * 事务缓存管理器。每个 CachingExecutor 都有一个，他不是一个所谓全局的概念。
    */
   private final TransactionalCacheManager transactionalCacheManager = new TransactionalCacheManager();
 

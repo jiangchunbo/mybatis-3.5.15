@@ -55,7 +55,15 @@ import org.apache.ibatis.type.TypeHandler;
 public class MapperBuilderAssistant extends BaseBuilder {
 
   private String currentNamespace;
+
+  /**
+   * 资源名称
+   */
   private final String resource;
+
+  /**
+   * Assistant 贮藏的 Cache
+   */
   private Cache currentCache;
   private boolean unresolvedCacheRef; // issue #676
 
@@ -220,11 +228,15 @@ public class MapperBuilderAssistant extends BaseBuilder {
     id = applyCurrentNamespace(id, false);
 
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
-      .resource(resource).fetchSize(fetchSize).timeout(timeout).statementType(statementType)
+      .resource(resource)
+      .fetchSize(fetchSize).timeout(timeout).statementType(statementType)
       .keyGenerator(keyGenerator).keyProperty(keyProperty).keyColumn(keyColumn).databaseId(databaseId).lang(lang)
       .resultOrdered(resultOrdered).resultSets(resultSets)
       .resultMaps(getStatementResultMaps(resultMap, resultType, id)).resultSetType(resultSetType)
-      .flushCacheRequired(flushCache).useCache(useCache).cache(currentCache).dirtySelect(dirtySelect);
+      .flushCacheRequired(flushCache)
+      .useCache(useCache)
+      .cache(currentCache) // Assistant 贮藏了一个 cache
+      .dirtySelect(dirtySelect);
 
     ParameterMap statementParameterMap = getStatementParameterMap(parameterMap, parameterType, id);
     if (statementParameterMap != null) {

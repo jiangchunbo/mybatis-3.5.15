@@ -178,8 +178,12 @@ public class MapperAnnotationBuilder {
     // Spring 可能不知道真实的资源名称，所以我们检查标记放置二次加载同一个资源
     // 这个标记被 XMLMapperBuilder#bindMapperForNamespace 设置
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
+
+      // 构建 xml 资源名称 -> type 完全限定名(替换.为/) + .xml
       String xmlResource = type.getName().replace('.', '/') + ".xml";
+
       // #1347
+      // 直接用 java Class 自带的资源解析
       InputStream inputStream = type.getResourceAsStream("/" + xmlResource);
       if (inputStream == null) {
         // Search XML mapper that is not in the module but in the classpath.

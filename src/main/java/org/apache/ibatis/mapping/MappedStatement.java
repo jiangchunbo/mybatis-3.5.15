@@ -34,10 +34,15 @@ import org.apache.ibatis.session.Configuration;
 public final class MappedStatement {
 
   private String resource;
+
   private Configuration configuration;
+
   private String id;
+
   private Integer fetchSize;
+
   private Integer timeout;
+
   private StatementType statementType;
 
   /**
@@ -54,20 +59,35 @@ public final class MappedStatement {
    * 如果配置了 cache，应该会在 ms 构造的时候，给这个属性赋值吧
    */
   private Cache cache;
+
   private ParameterMap parameterMap;
+
   private List<ResultMap> resultMaps;
+
   private boolean flushCacheRequired;
+
   private boolean useCache;
+
   private boolean resultOrdered;
+
   private SqlCommandType sqlCommandType;
+
   private KeyGenerator keyGenerator;
+
   private String[] keyProperties;
+
   private String[] keyColumns;
+
   private boolean hasNestedResultMaps;
+
   private String databaseId;
+
   private Log statementLog;
+
   private LanguageDriver lang;
+
   private String[] resultSets;
+
   private boolean dirtySelect;
 
   MappedStatement() {
@@ -75,6 +95,7 @@ public final class MappedStatement {
   }
 
   public static class Builder {
+
     private final MappedStatement mappedStatement = new MappedStatement();
 
     public Builder(Configuration configuration, String id, SqlSource sqlSource, SqlCommandType sqlCommandType) {
@@ -84,11 +105,11 @@ public final class MappedStatement {
       mappedStatement.statementType = StatementType.PREPARED;
       mappedStatement.resultSetType = ResultSetType.DEFAULT;
       mappedStatement.parameterMap = new ParameterMap.Builder(configuration, "defaultParameterMap", null,
-          new ArrayList<>()).build();
+        new ArrayList<>()).build();
       mappedStatement.resultMaps = new ArrayList<>();
       mappedStatement.sqlCommandType = sqlCommandType;
       mappedStatement.keyGenerator = configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType)
-          ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
+        ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
       String logId = id;
       if (configuration.getLogPrefix() != null) {
         logId = configuration.getLogPrefix() + id;
@@ -139,6 +160,9 @@ public final class MappedStatement {
       return this;
     }
 
+    /**
+     * 这条语句所使用的缓存。思考：有哪些方式可以配置缓存
+     */
     public Builder cache(Cache cache) {
       mappedStatement.cache = cache;
       return this;
@@ -197,11 +221,8 @@ public final class MappedStatement {
     /**
      * Resul sets.
      *
-     * @param resultSet
-     *          the result set
-     *
+     * @param resultSet the result set
      * @return the builder
-     *
      * @deprecated Use {@link #resultSets}
      */
     @Deprecated
@@ -218,6 +239,7 @@ public final class MappedStatement {
       mappedStatement.resultMaps = Collections.unmodifiableList(mappedStatement.resultMaps);
       return mappedStatement;
     }
+
   }
 
   public KeyGenerator getKeyGenerator() {
@@ -320,7 +342,6 @@ public final class MappedStatement {
    * Gets the resul sets.
    *
    * @return the resul sets
-   *
    * @deprecated Use {@link #getResultSets()}
    */
   @Deprecated
