@@ -39,10 +39,14 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface MappedTypes {
+
+  // 处理何种 Java 类型
+
   /**
    * Returns java types to map {@link TypeHandler}.
    *
    * @return java types
    */
   Class<?>[] value();
+
 }

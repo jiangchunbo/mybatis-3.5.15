@@ -53,7 +53,11 @@ public class ResultSetWrapper {
   public ResultSetWrapper(ResultSet rs, Configuration configuration) throws SQLException {
     this.typeHandlerRegistry = configuration.getTypeHandlerRegistry();
     this.resultSet = rs;
+
+    // JDBC API 获取 ResultSet 元数据
     final ResultSetMetaData metaData = rs.getMetaData();
+
+    // 结果集这一行有多少列
     final int columnCount = metaData.getColumnCount();
     for (int i = 1; i <= columnCount; i++) {
       columnNames.add(configuration.isUseColumnLabel() ? metaData.getColumnLabel(i) : metaData.getColumnName(i));
@@ -146,16 +150,26 @@ public class ResultSetWrapper {
   private void loadMappedAndUnmappedColumnNames(ResultMap resultMap, String columnPrefix) throws SQLException {
     Set<String> mappedColumnNames = new HashSet<>();
     List<String> unmappedColumnNames = new ArrayList<>();
+
+    // 如果前缀是 null，取 null
     final String upperColumnPrefix = columnPrefix == null ? null : columnPrefix.toUpperCase(Locale.ENGLISH);
+    // 将每一列前面都加上 prefix，例如 user.id
     final Set<String> mappedColumns = prependPrefixes(resultMap.getMappedColumns(), upperColumnPrefix);
+
+    // 遍历数据库的列，例如 user_id ?
     for (String columnName : columnNames) {
+      // 转换为 upper case 大写
       final String upperColumnName = columnName.toUpperCase(Locale.ENGLISH);
+
+      // 注意这里使用的是 contains
       if (mappedColumns.contains(upperColumnName)) {
         mappedColumnNames.add(upperColumnName);
       } else {
         unmappedColumnNames.add(columnName);
       }
     }
+
+    // 添加到缓存中
     mappedColumnNamesMap.put(getMapKey(resultMap, columnPrefix), mappedColumnNames);
     unMappedColumnNamesMap.put(getMapKey(resultMap, columnPrefix), unmappedColumnNames);
   }
@@ -169,10 +183,15 @@ public class ResultSetWrapper {
     return mappedColumnNames;
   }
 
+  /**
+   * 获取无法映射的列名。这一层还是为了缓存
+   */
   public List<String> getUnmappedColumnNames(ResultMap resultMap, String columnPrefix) throws SQLException {
     List<String> unMappedColumnNames = unMappedColumnNamesMap.get(getMapKey(resultMap, columnPrefix));
     if (unMappedColumnNames == null) {
+      // 缓存未命中，则构造
       loadMappedAndUnmappedColumnNames(resultMap, columnPrefix);
+      // 缓存构造完毕，读取缓存
       unMappedColumnNames = unMappedColumnNamesMap.get(getMapKey(resultMap, columnPrefix));
     }
     return unMappedColumnNames;
@@ -183,9 +202,12 @@ public class ResultSetWrapper {
   }
 
   private Set<String> prependPrefixes(Set<String> columnNames, String prefix) {
+    // 若空，跳过
     if (columnNames == null || columnNames.isEmpty() || prefix == null || prefix.length() == 0) {
       return columnNames;
     }
+
+    // 将 prefix 添加到每个 columnName 前面
     final Set<String> prefixed = new HashSet<>();
     for (String columnName : columnNames) {
       prefixed.add(prefix + columnName);

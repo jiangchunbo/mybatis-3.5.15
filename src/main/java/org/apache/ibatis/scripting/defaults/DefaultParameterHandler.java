@@ -98,7 +98,7 @@ public class DefaultParameterHandler implements ParameterHandler {
             value = null;
           }
           // 如果 TypeHandler 注册表能够处理这个参数类型，那么参数就是 parameterObject
-          // >>> 这个情况非常少见，只有少
+          // >>> 这种情况只有单个参数，且没有使用 @Param 注解
           else if (typeHandlerRegistry.hasTypeHandler(parameterObject.getClass())) {
             value = parameterObject;
           }
