@@ -719,6 +719,9 @@ public class Configuration {
 
   public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement,
                                               Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+
+    // 经过 new RoutingStatementHandler 这一步，BoundSql 一定会彻底定形
+    // 因为 update
     StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject,
       rowBounds, resultHandler, boundSql);
     return (StatementHandler) interceptorChain.pluginAll(statementHandler);

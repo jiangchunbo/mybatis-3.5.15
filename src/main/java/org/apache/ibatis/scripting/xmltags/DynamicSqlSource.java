@@ -49,10 +49,12 @@ public class DynamicSqlSource implements SqlSource {
     // 创建一个 context
     DynamicContext context = new DynamicContext(configuration, parameterObject);
 
-    // apply 方法将会把节点的结果放入 context
-    // context 最终解析完会得到 String sql 静态字符串
-    // context 里面还有 binding 参数
+    // rootSqlNode 是一个树结构，传入的 context 会被这个树结构加工
     rootSqlNode.apply(context);
+
+    // 经过上面 rootSqlNode.apply(context); 的加工，将会得到一些有用的东西
+    // SQL -> 最终格式，占位符都处理完毕
+    // Bindings -> 暂时还不清楚
 
     // 解析之后的返回值就是 StaticSqlSource
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
@@ -66,6 +68,7 @@ public class DynamicSqlSource implements SqlSource {
 
     // 可能是那些 <binding> 标签的东西
     // 放到额外参数里
+
     context.getBindings().forEach(boundSql::setAdditionalParameter);
     return boundSql;
   }
