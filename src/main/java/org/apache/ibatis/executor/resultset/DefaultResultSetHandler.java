@@ -728,12 +728,18 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     if (hasTypeHandlerForResultObject(rsw, resultType)) {
       return createPrimitiveResultObject(rsw, resultMap, columnPrefix);
     }
+
+    // 如果配置了构造器映射 (通常大家会配置么)
     if (!constructorMappings.isEmpty()) {
       return createParameterizedResultObject(rsw, resultType, constructorMappings, constructorArgTypes, constructorArgs,
         columnPrefix);
-    } else if (resultType.isInterface() || metaType.hasDefaultConstructor()) {
+    }
+    // 返回值是个接口 ?! 或者有默认构造器 (有时候我们没有提供默认构造器，而是常量类)
+    else if (resultType.isInterface() || metaType.hasDefaultConstructor()) {
       return objectFactory.create(resultType);
-    } else if (shouldApplyAutomaticMappings(resultMap, false)) {
+    }
+    // 是否应该自动映射
+    else if (shouldApplyAutomaticMappings(resultMap, false)) {
       return createByConstructorSignature(rsw, resultMap, columnPrefix, resultType, constructorArgTypes,
         constructorArgs);
     }
@@ -773,15 +779,22 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   private Object createByConstructorSignature(ResultSetWrapper rsw, ResultMap resultMap, String columnPrefix,
                                               Class<?> resultType, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) throws SQLException {
     return applyConstructorAutomapping(rsw, resultMap, columnPrefix, resultType, constructorArgTypes, constructorArgs,
-      findConstructorForAutomapping(resultType, rsw).orElseThrow(() -> new ExecutorException(
-        "No constructor found in " + resultType.getName() + " matching " + rsw.getClassNames())));
+
+      // 最后一个参数是构造器，也就是必须找到一个构造器，否则都抛异常了
+      findConstructorForAutomapping(resultType, rsw)
+        .orElseThrow(() -> new ExecutorException("No constructor found in " + resultType.getName() + " matching " + rsw.getClassNames())));
   }
 
   private Optional<Constructor<?>> findConstructorForAutomapping(final Class<?> resultType, ResultSetWrapper rsw) {
+    // 返回结果类型的构造器
     Constructor<?>[] constructors = resultType.getDeclaredConstructors();
+
+    // 如果只有 1 个构造器 (最好也加一下 @AutomapConstructor 注解比较安全，万一哪天多个构造器呢)
     if (constructors.length == 1) {
       return Optional.of(constructors[0]);
     }
+
+    // 如果多个构造器，则判断是否存在 @AutomapConstructor
     Optional<Constructor<?>> annotated = Arrays.stream(constructors)
       .filter(x -> x.isAnnotationPresent(AutomapConstructor.class)).reduce((x, y) -> {
         throw new ExecutorException("@AutomapConstructor should be used in only one constructor.");
@@ -846,6 +859,8 @@ public class DefaultResultSetHandler implements ResultSetHandler {
                                                           String columnPrefix, List<Class<?>> constructorArgTypes, List<Object> constructorArgs, Constructor<?> constructor,
                                                           boolean foundValues) throws SQLException {
     List<String> missingArgs = null;
+
+    // 遍历构造器参数
     Parameter[] params = constructor.getParameters();
     for (Parameter param : params) {
       boolean columnNotFound = true;

@@ -39,7 +39,9 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 
 /**
- * MapperMethod
+ * 一个 MapperMethod 对象就是一个 Mapper 接口的 Method 对象表现 (实际上不会存储 Method 所有信息会解析存储)
+ * <p>
+ * 从方法签名可以解析出很多信息，录入是否返回多个(many)，是否返回映射(Map)
  *
  * @author Clinton Begin
  * @author Eduardo Macarron
@@ -238,6 +240,9 @@ public class MapperMethod {
 
   public static class SqlCommand {
 
+    /**
+     * statementId
+     */
     private final String name;
 
     private final SqlCommandType type;
@@ -298,27 +303,34 @@ public class MapperMethod {
 
   public static class MethodSignature {
 
+    // 返回类型是 collection 或者 array
     private final boolean returnsMany;
 
-    /**
-     * 是否返回 Map。并不是说返回值是 Map 就是 true，同时还需要有 @MapKey 注解
-     */
+    // 是否返回 Map。并不是说返回值是 Map 就是 true，同时还需要有 @MapKey 注解
     private final boolean returnsMap;
 
+    // 返回类型是 void
     private final boolean returnsVoid;
 
+    // 返回类型是 Cursor
     private final boolean returnsCursor;
 
+    // 返回类型是 Optional
     private final boolean returnsOptional;
 
+    // 返回类型
     private final Class<?> returnType;
 
+    // MapKey 映射的 key
     private final String mapKey;
 
+    // ResultHandler 参数索引
     private final Integer resultHandlerIndex;
 
+    // RowBounds 参数索引
     private final Integer rowBoundsIndex;
 
+    // param name 解析器
     private final ParamNameResolver paramNameResolver;
 
     public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
