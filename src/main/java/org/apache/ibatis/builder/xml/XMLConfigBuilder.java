@@ -116,6 +116,9 @@ public class XMLConfigBuilder extends BaseBuilder {
     this.parser = parser;
   }
 
+  /**
+   * 解析 XML 的入口，得到 Configuration 对象
+   */
   public Configuration parse() {
     // 一个简单布尔变量 parsed
     if (parsed) {
@@ -162,20 +165,21 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析 {@code <settings>}
+   */
   private Properties settingsAsProperties(XNode context) {
     // 如果没有配置 setting，就创建一个空的属性返回
     if (context == null) {
       return new Properties();
     }
 
-    // 跟之前 properties 调用的方法一样，也是获取 name value
+    // 获取一个属性对象，从 <settings> 子元素初始化
     Properties props = context.getChildrenAsProperties();
 
     // Check that all settings are known to the configuration class
-    // 竟然构造了一个 Configuration
+    // 检查 <settings> 属性是否正确，必须是 Configuration 可以赋值的属性 [避免写错属性]
     MetaClass metaConfig = MetaClass.forClass(Configuration.class, localReflectorFactory);
-
-    // 遍历所有的 setting 子项
     for (Object key : props.keySet()) {
       // 如果没有 setter 方法，就是设置了非法属性，需要报错
       if (!metaConfig.hasSetter(String.valueOf(key))) {
@@ -210,7 +214,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   /**
-   * 解析 <typeAliases></typeAliases> 节点
+   * 解析 {@code <typeAliases>} 节点
    *
    * @param context MyBatis DOM 包装
    */
@@ -219,11 +223,14 @@ public class XMLConfigBuilder extends BaseBuilder {
       return;
     }
     for (XNode child : context.getChildren()) {
+      // 包扫描
       if ("package".equals(child.getName())) {
         // 扫描这个 package
         String typeAliasPackage = child.getStringAttribute("name");
         configuration.getTypeAliasRegistry().registerAliases(typeAliasPackage);
-      } else {
+      }
+      // 单个注册
+      else {
         String alias = child.getStringAttribute("alias");
         String type = child.getStringAttribute("type");
         try {
@@ -282,35 +289,34 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析 {@code <properties>}
+   */
   private void propertiesElement(XNode context) throws Exception {
     // 没有配 properties 节点
     if (context == null) {
       return;
     }
 
-    // 解析得到一些键值对
+    // 构造一个默认的属性，会读取 <properties> 的子元素
     Properties defaults = context.getChildrenAsProperties();
 
-    // 接下来就是获取 resource 或者 url
+    // 获取 resource 或者 url。这两个属性是 [互斥] 的。
     String resource = context.getStringAttribute("resource");
     String url = context.getStringAttribute("url");
-
-    // 你不能两个都设置，不然搞不清楚
     if (resource != null && url != null) {
       throw new BuilderException(
         "The properties element cannot specify both a URL and a resource based property file reference.  Please specify one or the other.");
     }
 
-    // 如果你设置了 resource，那么从类路径读取资源
+    // 使用 resource 或者 url 的资源属性覆盖 defaults
     if (resource != null) {
       defaults.putAll(Resources.getResourceAsProperties(resource));
-    }
-    // 如果你设置了 url，那么从 url 读取资源
-    else if (url != null) {
+    } else if (url != null) {
       defaults.putAll(Resources.getUrlAsProperties(url));
     }
 
-    // 获得变量，放进去
+    // 使用 configuration 的属性覆盖 [configuration 属性的优先级特别高]
     Properties vars = configuration.getVariables();
     if (vars != null) {
       defaults.putAll(vars);

@@ -44,13 +44,9 @@ public class SqlSourceBuilder extends BaseBuilder {
 
   public SqlSource parse(String originalSql, Class<?> parameterType, Map<String, Object> additionalParameters) {
 
-    // 创建一个 handler，处理 #{} 标记
-    // 实际上就是添加 1 个参数映射，然后返回一个 ?
-    ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(configuration, parameterType,
-      additionalParameters);
-
-    // 令牌解析器。若解析到令牌，则使用 handler 进行处理
-    // 有点像设置了一个 lambda 函数
+    // parser + handler 配合使用
+    // parser 用于解析 token，handler 用于处理 token 里面的内容
+    ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(configuration, parameterType, additionalParameters);
     GenericTokenParser parser = new GenericTokenParser("#{", "}", handler);
 
     // 根据是否要清除多余的空白字符，来判断是否要执行 removeExtraWhitespaces
@@ -85,17 +81,20 @@ public class SqlSourceBuilder extends BaseBuilder {
     return builder.toString();
   }
 
-
   /**
-   * 内部私有的静态类。这个类用于处理遇到 token 之后如何处理。
-   * <p>
-   * 这个类实际上做的事情就是，将 token 之间的 content 解析成 ParameterMapping，然后返回一个 "?" 替换原始标记。
-   * <p>
+   * 用于处理 token 里面的内容
+   *
+   * @see ParameterMappingTokenHandler#handleToken(String)
    */
   private static class ParameterMappingTokenHandler extends BaseBuilder implements TokenHandler {
 
     private final List<ParameterMapping> parameterMappings = new ArrayList<>();
+
+    /**
+     * 开发者自己指定的 parameterType 属性，或者是 fallback 使用 Object.class
+     */
     private final Class<?> parameterType;
+
     private final MetaObject metaParameters;
 
     public ParameterMappingTokenHandler(Configuration configuration, Class<?> parameterType,
@@ -110,7 +109,7 @@ public class SqlSourceBuilder extends BaseBuilder {
     }
 
     /**
-     * 遇到 #{} 会怎么处理呢？方法就在这里
+     * 解析 token 里面的内容(或者叫属性)，属性的组成部分见 {@link ParameterExpression} 语法定义
      */
     @Override
     public String handleToken(String content) {
@@ -137,7 +136,9 @@ public class SqlSourceBuilder extends BaseBuilder {
       // 额外参数？？
       if (metaParameters.hasGetter(property)) { // issue #448 get type from additional params
         propertyType = metaParameters.getGetterType(property);
-      } else if (typeHandlerRegistry.hasTypeHandler(parameterType)) {
+      }
+      // 开发者没有指定 parameterType 属性，此处就是 Object，找到的是 UnknownTypeHandler
+      else if (typeHandlerRegistry.hasTypeHandler(parameterType)) {
         propertyType = parameterType;
       } else if (JdbcType.CURSOR.name().equals(propertiesMap.get("jdbcType"))) {
         propertyType = java.sql.ResultSet.class;
@@ -203,6 +204,7 @@ public class SqlSourceBuilder extends BaseBuilder {
           + "}.  Check syntax #{property|(expression), var1=value1, var2=value2, ...} ", ex);
       }
     }
+
   }
 
 }

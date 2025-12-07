@@ -32,12 +32,17 @@ import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.managed.ManagedTransactionFactory;
 
 /**
+ * {@link SqlSessionFactory} 默认实现类，提供了最底层的实现
+ *
  * @author Clinton Begin
  */
 public class DefaultSqlSessionFactory implements SqlSessionFactory {
 
   private final Configuration configuration;
 
+  /**
+   * 唯一的构造器，只需要告诉 {@link DefaultSqlSessionFactory} 配置 {@link Configuration} 它就能运作
+   */
   public DefaultSqlSessionFactory(Configuration configuration) {
     this.configuration = configuration;
   }
@@ -91,7 +96,7 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
    * 私有方法，从 DataSource 获取 Session
    */
   private SqlSession openSessionFromDataSource(ExecutorType execType, TransactionIsolationLevel level,
-      boolean autoCommit) {
+                                               boolean autoCommit) {
     Transaction tx = null;
     try {
       final Environment environment = configuration.getEnvironment();

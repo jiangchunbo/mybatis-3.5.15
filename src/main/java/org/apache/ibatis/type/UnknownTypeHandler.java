@@ -28,21 +28,23 @@ import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 当我们在 SQL 参数中没有指定 typeHandler，将会使用 {@link UnknownTypeHandler} 进行决策
+ *
  * @author Clinton Begin
  */
 public class UnknownTypeHandler extends BaseTypeHandler<Object> {
 
   private static final ObjectTypeHandler OBJECT_TYPE_HANDLER = new ObjectTypeHandler();
+
   // TODO Rename to 'configuration' after removing the 'configuration' property(deprecated property) on parent class
   private final Configuration config;
+
   private final Supplier<TypeHandlerRegistry> typeHandlerRegistrySupplier;
 
   /**
    * The constructor that pass a MyBatis configuration.
    *
-   * @param configuration
-   *          a MyBatis configuration
-   *
+   * @param configuration a MyBatis configuration
    * @since 3.5.4
    */
   public UnknownTypeHandler(Configuration configuration) {
@@ -53,9 +55,7 @@ public class UnknownTypeHandler extends BaseTypeHandler<Object> {
   /**
    * The constructor that pass the type handler registry.
    *
-   * @param typeHandlerRegistry
-   *          a type handler registry
-   *
+   * @param typeHandlerRegistry a type handler registry
    * @deprecated Since 3.5.4, please use the {@link #UnknownTypeHandler(Configuration)}.
    */
   @Deprecated
@@ -66,8 +66,9 @@ public class UnknownTypeHandler extends BaseTypeHandler<Object> {
 
   @Override
   public void setNonNullParameter(PreparedStatement ps, int i, Object parameter, JdbcType jdbcType)
-      throws SQLException {
-    // 由于我们不知道 TypeHandler，因此这里会进行解析
+    throws SQLException {
+    // 解析使用哪个 TypeHandler (通过参数值)
+    // jdbcType 如果 SQL 参数没有指定，也是 null
     TypeHandler handler = resolveTypeHandler(parameter, jdbcType);
 
     // 使用一个新的 TypeHandler 解析参数 (委托思想)
@@ -94,8 +95,17 @@ public class UnknownTypeHandler extends BaseTypeHandler<Object> {
     return cs.getObject(columnIndex);
   }
 
+  /**
+   * 根据参数值解析使用哪个 TypeHandler
+   *
+   * @param parameter 参数值
+   * @param jdbcType
+   * @return TypeHandler
+   */
   private TypeHandler<?> resolveTypeHandler(Object parameter, JdbcType jdbcType) {
     TypeHandler<?> handler;
+
+    // 参数值是 null [特殊情况]
     if (parameter == null) {
       handler = OBJECT_TYPE_HANDLER;
     } else {
@@ -162,4 +172,5 @@ public class UnknownTypeHandler extends BaseTypeHandler<Object> {
       return null;
     }
   }
+
 }

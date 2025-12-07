@@ -35,8 +35,14 @@ import org.w3c.dom.NodeList;
 public class XMLScriptBuilder extends BaseBuilder {
 
   private final XNode context;
+
   private boolean isDynamic;
+
+  /**
+   * SQL 脚本 parameterType 属性
+   */
   private final Class<?> parameterType;
+
   private final Map<String, NodeHandler> nodeHandlerMap = new HashMap<>();
 
   public XMLScriptBuilder(Configuration configuration, XNode context) {
@@ -122,10 +128,13 @@ public class XMLScriptBuilder extends BaseBuilder {
   }
 
   private interface NodeHandler {
+
     void handleNode(XNode nodeToHandle, List<SqlNode> targetContents);
+
   }
 
   private static class BindHandler implements NodeHandler {
+
     public BindHandler() {
       // Prevent Synthetic Access
     }
@@ -137,9 +146,11 @@ public class XMLScriptBuilder extends BaseBuilder {
       final VarDeclSqlNode node = new VarDeclSqlNode(name, expression);
       targetContents.add(node);
     }
+
   }
 
   private class TrimHandler implements NodeHandler {
+
     public TrimHandler() {
       // Prevent Synthetic Access
     }
@@ -154,9 +165,11 @@ public class XMLScriptBuilder extends BaseBuilder {
       TrimSqlNode trim = new TrimSqlNode(configuration, mixedSqlNode, prefix, prefixOverrides, suffix, suffixOverrides);
       targetContents.add(trim);
     }
+
   }
 
   private class WhereHandler implements NodeHandler {
+
     public WhereHandler() {
       // Prevent Synthetic Access
     }
@@ -167,9 +180,11 @@ public class XMLScriptBuilder extends BaseBuilder {
       WhereSqlNode where = new WhereSqlNode(configuration, mixedSqlNode);
       targetContents.add(where);
     }
+
   }
 
   private class SetHandler implements NodeHandler {
+
     public SetHandler() {
       // Prevent Synthetic Access
     }
@@ -180,9 +195,11 @@ public class XMLScriptBuilder extends BaseBuilder {
       SetSqlNode set = new SetSqlNode(configuration, mixedSqlNode);
       targetContents.add(set);
     }
+
   }
 
   private class ForEachHandler implements NodeHandler {
+
     public ForEachHandler() {
       // Prevent Synthetic Access
     }
@@ -198,12 +215,14 @@ public class XMLScriptBuilder extends BaseBuilder {
       String close = nodeToHandle.getStringAttribute("close");
       String separator = nodeToHandle.getStringAttribute("separator");
       ForEachSqlNode forEachSqlNode = new ForEachSqlNode(configuration, mixedSqlNode, collection, nullable, index, item,
-          open, close, separator);
+        open, close, separator);
       targetContents.add(forEachSqlNode);
     }
+
   }
 
   private class IfHandler implements NodeHandler {
+
     public IfHandler() {
       // Prevent Synthetic Access
     }
@@ -215,9 +234,11 @@ public class XMLScriptBuilder extends BaseBuilder {
       IfSqlNode ifSqlNode = new IfSqlNode(mixedSqlNode, test);
       targetContents.add(ifSqlNode);
     }
+
   }
 
   private class OtherwiseHandler implements NodeHandler {
+
     public OtherwiseHandler() {
       // Prevent Synthetic Access
     }
@@ -227,9 +248,11 @@ public class XMLScriptBuilder extends BaseBuilder {
       MixedSqlNode mixedSqlNode = parseDynamicTags(nodeToHandle);
       targetContents.add(mixedSqlNode);
     }
+
   }
 
   private class ChooseHandler implements NodeHandler {
+
     public ChooseHandler() {
       // Prevent Synthetic Access
     }
@@ -245,7 +268,7 @@ public class XMLScriptBuilder extends BaseBuilder {
     }
 
     private void handleWhenOtherwiseNodes(XNode chooseSqlNode, List<SqlNode> ifSqlNodes,
-        List<SqlNode> defaultSqlNodes) {
+                                          List<SqlNode> defaultSqlNodes) {
       List<XNode> children = chooseSqlNode.getChildren();
       for (XNode child : children) {
         String nodeName = child.getNode().getNodeName();
@@ -267,6 +290,7 @@ public class XMLScriptBuilder extends BaseBuilder {
       }
       return defaultSqlNode;
     }
+
   }
 
 }

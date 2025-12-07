@@ -19,14 +19,32 @@ import java.util.HashMap;
 
 /**
  * Inline parameter expression parser. Supported grammar (simplified):
+ * <p>
+ * 一个内联参数由 3 部分组成:
+ * <pre>
+ * a) 属性名或表达式(二选一)
+ * b) oldJdbcType
+ * c) 属性 可选，可以有多个
+ * </pre>
  *
  * <pre>
  * inline-parameter = (propertyName | expression) oldJdbcType attributes
+ *
  * propertyName = /expression language's property navigation path/
+ * propertyName 就是一条普通地对象属性访问路径，比如 user.address.street
+ *
  * expression = '(' /expression language's expression/ ')'
+ * expression 如果想写更复杂地的表达式，就放在一对圆括号里，例如 (#{age}+1)
+ *
  * oldJdbcType = ':' /any valid jdbc type/
+ * 在属性名或表达式后面加冒号，再写 JDBC 类型，表示强制指定类型: name:VARCHAR
+ * 为什么称之为 old(旧的)？因为新的方式是使用属性，例如 #{user,jdbcType=VARCHAR}
+ *
  * attributes = (',' attribute)*
+ * 后面可以跟 0 到 N 个逗号分隔的 attribute
+ *
  * attribute = name '=' value
+ * attribute 的形式是 name=value，比如 javaType=int, typeHandler=MyHandler
  * </pre>
  *
  * @author Frank D. Martinez [mnesarco]
@@ -40,10 +58,15 @@ public class ParameterExpression extends HashMap<String, String> {
   }
 
   private void parse(String expression) {
+    // 找到下一个有效字符(跳过空白)
     int p = skipWS(expression, 0);
+
+    // 如果以 '(' 开始，那么这是一个表达式
     if (expression.charAt(p) == '(') {
       expression(expression, p + 1);
-    } else {
+    }
+    // 否则，这是一个属性
+    else {
       property(expression, p);
     }
   }
@@ -71,12 +94,17 @@ public class ParameterExpression extends HashMap<String, String> {
     }
   }
 
+  /**
+   * 从 expression[p] 开始，跳过空白字符，返回下一个非空白字符的位置
+   */
   private int skipWS(String expression, int p) {
     for (int i = p; i < expression.length(); i++) {
       if (expression.charAt(i) > 0x20) {
         return i;
       }
     }
+
+    // 如果全都是空白字符，就返回 expression 的长度
     return expression.length();
   }
 

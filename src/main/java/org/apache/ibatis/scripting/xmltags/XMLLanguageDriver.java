@@ -35,18 +35,22 @@ public class XMLLanguageDriver implements LanguageDriver {
 
   @Override
   public ParameterHandler createParameterHandler(MappedStatement mappedStatement, Object parameterObject,
-      BoundSql boundSql) {
+                                                 BoundSql boundSql) {
     return new DefaultParameterHandler(mappedStatement, parameterObject, boundSql);
   }
 
+  /**
+   * 根据 SQL 语句节点，创建 SqlSource
+   *
+   * @param parameterType XML 书写的 parameterType 属性 (发挥作用的地方不多了)
+   */
   @Override
   public SqlSource createSqlSource(Configuration configuration, XNode script, Class<?> parameterType) {
 
     // 构建 builder，其实就是个 context，里面存储解析过程中产生的状态，比如 isDynamic
     XMLScriptBuilder builder = new XMLScriptBuilder(configuration, script, parameterType);
 
-    // 解析脚本节点
-    // 其中能够识别出来是 dynamic 还是 raw
+    // 解析 SQL 脚本，得到 DynamicSqlSource 或者 RawSqlSource
     return builder.parseScriptNode();
   }
 

@@ -62,11 +62,13 @@ public final class TypeHandlerRegistry {
   /**
    * JavaType -> JdbcType -> TypeHandler
    * <p>
+   * 值得注意的一点是，外层 Map 是 ConcurrentHashMap，但是内层的 Map 是 HashMap，因为 mybatis 需要存储 JdbcType 值为 null (开发者没有指定 jdbcType)
+   * <p>
    * 这里面可能存储的格式是：
-   * <p>
+   * <pre>
    * Integer -> null -> IntegerTypeHandler
-   * <p>
    * Integer -> NVARCHAR -> IntegerTypeHandler
+   * </pre
    */
   private final Map<Type, Map<JdbcType, TypeHandler<?>>> typeHandlerMap = new ConcurrentHashMap<>();
 
@@ -253,21 +255,31 @@ public final class TypeHandlerRegistry {
 
   /**
    * 决策出来使用哪种 TypeHandler
+   *
+   * @param type     参数值类型
+   * @param jdbcType 开发者指定的 jdbc 类型 (大多数情况都没有指定)
    */
   @SuppressWarnings("unchecked")
   private <T> TypeHandler<T> getTypeHandler(Type type, JdbcType jdbcType) {
-    // 如果参数是 ParamMap
+    // 如果参数是 ParamMap，几乎不会遇到
     if (ParamMap.class.equals(type)) {
       return null;
     }
 
+    // 先通过参数值的类型找到一个 Map(一定是 HashMap)
     Map<JdbcType, TypeHandler<?>> jdbcHandlerMap = getJdbcHandlerMap(type);
+
     TypeHandler<?> handler = null;
     if (jdbcHandlerMap != null) {
+      // jdbcType 可能是 null，但是对于 HashMap 没有问题
       handler = jdbcHandlerMap.get(jdbcType);
+
+      // fallback 到默认的 TypeHandler
       if (handler == null) {
         handler = jdbcHandlerMap.get(null);
       }
+
+      // 找到唯一一种 TypeHandler
       if (handler == null) {
         // #591
         handler = pickSoleHandler(jdbcHandlerMap);
@@ -343,12 +355,17 @@ public final class TypeHandlerRegistry {
     return getJdbcHandlerMapForSuperclass(superclass);
   }
 
+  /**
+   * 找到唯一一种 TypeHandler
+   */
   private TypeHandler<?> pickSoleHandler(Map<JdbcType, TypeHandler<?>> jdbcHandlerMap) {
     TypeHandler<?> soleHandler = null;
     for (TypeHandler<?> handler : jdbcHandlerMap.values()) {
       if (soleHandler == null) {
         soleHandler = handler;
-      } else if (!handler.getClass().equals(soleHandler.getClass())) {
+      }
+      // 如果找到多个不一样的 TypeHandler，那么返回 null
+      else if (!handler.getClass().equals(soleHandler.getClass())) {
         // More than one type handlers registered.
         return null;
       }

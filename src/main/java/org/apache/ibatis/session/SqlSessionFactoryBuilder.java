@@ -26,18 +26,13 @@ import org.apache.ibatis.executor.ErrorContext;
 import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
 
 /**
- * Builds {@link SqlSession} instances.
+ * Builds {@link SqlSessionFactory} instances.
  * <p>
- * 这是一个 Builder 看起来是一个建造者模式，其实没什么可建造的，只有各种这样的 build 重载方法而已
- * <p>
- * 支持以下的配置文件来源
- * <ul>
- *   <li>Reader</li>
- *   <li>InputStream</li>
- *   <li>Configuration</li>
- * </ul>
+ * 构建 {@link SqlSessionFactory} 实例对象。
+ * 一般就是读取 XML 配置文件解析得到 {@link Configuration} 对象。
  *
  * @author Clinton Begin
+ * @see XMLConfigBuilder 依赖于 {@link XMLConfigBuilder} 能够解析 XML 配置文件
  */
 public class SqlSessionFactoryBuilder {
 

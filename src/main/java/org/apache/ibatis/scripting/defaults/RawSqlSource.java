@@ -39,7 +39,7 @@ public class RawSqlSource implements SqlSource {
    *
    * @param configuration 配置
    * @param rootSqlNode   说白了就是 {@link org.apache.ibatis.scripting.xmltags.MixedSqlNode}
-   * @param parameterType 参数类型
+   * @param parameterType SQL 脚本的 parameterType 属性
    */
   public RawSqlSource(Configuration configuration, SqlNode rootSqlNode, Class<?> parameterType) {
     this(configuration, getSql(configuration, rootSqlNode), parameterType);
