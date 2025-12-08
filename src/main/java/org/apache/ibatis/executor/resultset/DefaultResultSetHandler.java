@@ -396,7 +396,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     // shouldProcessMoreRows: 两个条件，一个是 context 不能 stop，另一个是 result count 还没到达 limit
     // resultSet.next() 就是中规中矩的 JDBC 方法
     while (shouldProcessMoreRows(resultContext, rowBounds) && !resultSet.isClosed() && resultSet.next()) {
+      // 决策到底使用哪个 ResultMap，通常是 ResultMap 原对象返回
       ResultMap discriminatedResultMap = resolveDiscriminatedResultMap(resultSet, resultMap, null);
+
+      // 获取 行对象
       Object rowValue = getRowValue(rsw, discriminatedResultMap, null);
       storeObject(resultHandler, resultContext, rowValue, parentMapping, resultSet);
     }
@@ -699,12 +702,21 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   // INSTANTIATION & CONSTRUCTOR MAPPING
   //
 
+  /**
+   * 创建行对象 (外层方法)
+   */
   private Object createResultObject(ResultSetWrapper rsw, ResultMap resultMap, ResultLoaderMap lazyLoader,
                                     String columnPrefix) throws SQLException {
     this.useConstructorMappings = false; // reset previous mapping result
+
+    // 构造器参数类型 (需要推断构造器)
     final List<Class<?>> constructorArgTypes = new ArrayList<>();
+    // 构造器实际参数
     final List<Object> constructorArgs = new ArrayList<>();
+
+    // 调用构造器实例化 [行对象]
     Object resultObject = createResultObject(rsw, resultMap, constructorArgTypes, constructorArgs, columnPrefix);
+
     if (resultObject != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
       final List<ResultMapping> propertyMappings = resultMap.getPropertyResultMappings();
       for (ResultMapping propertyMapping : propertyMappings) {
@@ -716,15 +728,26 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
       }
     }
+
     this.useConstructorMappings = resultObject != null && !constructorArgTypes.isEmpty(); // set current mapping result
     return resultObject;
   }
 
+  /**
+   * 创建行对象 (里层方法)
+   *
+   * @param rsw                 ResultSet 包装
+   * @param resultMap           结果集映射
+   * @param constructorArgTypes 构造方法参数类型
+   * @param constructorArgs     构造方法参数
+   */
   private Object createResultObject(ResultSetWrapper rsw, ResultMap resultMap, List<Class<?>> constructorArgTypes,
                                     List<Object> constructorArgs, String columnPrefix) throws SQLException {
     final Class<?> resultType = resultMap.getType();
     final MetaClass metaType = MetaClass.forClass(resultType, reflectorFactory);
     final List<ResultMapping> constructorMappings = resultMap.getConstructorResultMappings();
+
+    // 是否有能够处理这种结果(标量)的 TypeHandler
     if (hasTypeHandlerForResultObject(rsw, resultType)) {
       return createPrimitiveResultObject(rsw, resultMap, columnPrefix);
     }
@@ -912,11 +935,15 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     throws SQLException {
     final Class<?> resultType = resultMap.getType();
     final String columnName;
+
+    // 如果配置了 ResultMap，需要增加 prefix (通常也不会配吧)
     if (!resultMap.getResultMappings().isEmpty()) {
       final List<ResultMapping> resultMappingList = resultMap.getResultMappings();
       final ResultMapping mapping = resultMappingList.get(0);
       columnName = prependPrefix(mapping.getColumn(), columnPrefix);
-    } else {
+    }
+    // 直接获取列名
+    else {
       columnName = rsw.getColumnNames().get(0);
     }
     final TypeHandler<?> typeHandler = rsw.getTypeHandler(resultType, columnName);
@@ -1030,10 +1057,20 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   // DISCRIMINATOR
   //
 
+  /**
+   * 传入 ResultMap 返回 ResultMap，这种方式就是在 [决策]
+   * <p>
+   * 一个查询语句未必只能有一种映射方法，若有多个映射方式，需要鉴别器来判断
+   * <p>
+   * Discriminated 根据某一列的值在多个子映射之间做出分支选择
+   */
   public ResultMap resolveDiscriminatedResultMap(ResultSet rs, ResultMap resultMap, String columnPrefix)
     throws SQLException {
     Set<String> pastDiscriminators = new HashSet<>();
+
+    // 通常开发 ResultMap 都不会设置 Discriminator，因此这里通常得到的是 null
     Discriminator discriminator = resultMap.getDiscriminator();
+
     while (discriminator != null) {
       final Object value = getDiscriminatorValue(rs, discriminator, columnPrefix);
       final String discriminatedMapId = discriminator.getMapIdFor(String.valueOf(value));
@@ -1319,10 +1356,16 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     return null;
   }
 
+  /**
+   * 判断是否有能够处理这种类型的 TypeHandler
+   */
   private boolean hasTypeHandlerForResultObject(ResultSetWrapper rsw, Class<?> resultType) {
+    // 标量查询
     if (rsw.getColumnNames().size() == 1) {
       return typeHandlerRegistry.hasTypeHandler(resultType, rsw.getJdbcType(rsw.getColumnNames().get(0)));
     }
+
+    // 结构化对象查询
     return typeHandlerRegistry.hasTypeHandler(resultType);
   }
 

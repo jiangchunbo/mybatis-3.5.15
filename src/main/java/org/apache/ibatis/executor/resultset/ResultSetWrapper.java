@@ -37,6 +37,8 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 import org.apache.ibatis.type.UnknownTypeHandler;
 
 /**
+ * ResultSetWrapper 这个类存在的意义估计就是把 ResultSet 里面的数据解析个清清楚楚
+ *
  * @author Iwao AVE!
  */
 public class ResultSetWrapper {
@@ -44,12 +46,17 @@ public class ResultSetWrapper {
   private final ResultSet resultSet;
   private final TypeHandlerRegistry typeHandlerRegistry;
   private final List<String> columnNames = new ArrayList<>();
+
+  // 不是 Java 的类型，而是 JDBC 列的类型
   private final List<String> classNames = new ArrayList<>();
   private final List<JdbcType> jdbcTypes = new ArrayList<>();
   private final Map<String, Map<Class<?>, TypeHandler<?>>> typeHandlerMap = new HashMap<>();
   private final Map<String, Set<String>> mappedColumnNamesMap = new HashMap<>();
   private final Map<String, List<String>> unMappedColumnNamesMap = new HashMap<>();
 
+  /**
+   * 解析 ResultSet，得到各种信息
+   */
   public ResultSetWrapper(ResultSet rs, Configuration configuration) throws SQLException {
     this.typeHandlerRegistry = configuration.getTypeHandlerRegistry();
     this.resultSet = rs;

@@ -66,8 +66,11 @@ public class MapperRegistry {
     return knownMappers.containsKey(type);
   }
 
+  /**
+   * 注册 Mapper 接口
+   */
   public <T> void addMapper(Class<T> type) {
-    // 我希望你是一个接口
+    // 1) 必须是接口
     if (type.isInterface()) {
       // 不许重复注册
       if (hasMapper(type)) {
@@ -83,7 +86,7 @@ public class MapperRegistry {
         // otherwise the binding may automatically be attempted by the
         // mapper parser. If the type is already known, it won't try.
 
-        // 解析注解
+        // MapperAnnotationBuilder 解析注解
         MapperAnnotationBuilder parser = new MapperAnnotationBuilder(config, type);
         parser.parse();
         loadCompleted = true;

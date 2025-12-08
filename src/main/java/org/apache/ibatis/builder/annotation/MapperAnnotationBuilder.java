@@ -124,7 +124,6 @@ public class MapperAnnotationBuilder {
       // 将 resource 标记为已加载
       configuration.addLoadedResource(resource);
 
-      //
       assistant.setCurrentNamespace(type.getName());
 
       // 解析缓存
@@ -143,10 +142,15 @@ public class MapperAnnotationBuilder {
         try {
           parseStatement(method);
         } catch (IncompleteElementException e) {
+          // 这种设计是 mybatis 为了解决解析之间的依赖问题
+          // 如果解析失败，就暂时搁置，稍后再解析
+          // [解析顺序很难保证完美的拓扑排序]
           configuration.addIncompleteMethod(new MethodResolver(this, method));
         }
       }
     }
+
+    // 检查是否存在因为之前解析失败遗留的方法，再次尝试 (也可能又失败)
     parsePendingMethods();
   }
 

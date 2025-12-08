@@ -159,6 +159,7 @@ public class MapperMethod {
   }
 
   private <E> Object executeForMany(SqlSession sqlSession, Object[] args) {
+    // 调用 sqlSession.selectList 返回结果是 List，但是为什么方法 return type 是 Object？为了兼容 Array 类型
     List<E> result;
     Object param = method.convertArgsToSqlCommandParam(args);
     if (method.hasRowBounds()) {
@@ -167,11 +168,17 @@ public class MapperMethod {
     } else {
       result = sqlSession.selectList(command.getName(), param);
     }
+
+    // 转换为 Array? Set?
+
+    // 如果返回值与 method return type 不兼容
     // issue #510 Collections & arrays support
     if (!method.getReturnType().isAssignableFrom(result.getClass())) {
+      // 反射创建数组 将 List 转换为数组
       if (method.getReturnType().isArray()) {
         return convertToArray(result);
       }
+      // 转换为别的集合
       return convertToDeclaredCollection(sqlSession.getConfiguration(), result);
     }
     return result;
@@ -199,10 +206,16 @@ public class MapperMethod {
   @SuppressWarnings("unchecked")
   private <E> Object convertToArray(List<E> list) {
     Class<?> arrayComponentType = method.getReturnType().getComponentType();
+
+    // 实例化数组对象，可能是 int[] 也可能是 T[]
     Object array = Array.newInstance(arrayComponentType, list.size());
+
+    // 如果是 T[]，就用大家都会的 list.toArray
     if (!arrayComponentType.isPrimitive()) {
       return list.toArray((E[]) array);
     }
+
+    // 如果是 int[] 等，只能使用反射填充
     for (int i = 0; i < list.size(); i++) {
       Array.set(array, i, list.get(i));
     }

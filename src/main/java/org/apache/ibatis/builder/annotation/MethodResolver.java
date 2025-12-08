@@ -21,6 +21,10 @@ import java.lang.reflect.Method;
  * @author Eduardo Macarron
  */
 public class MethodResolver {
+
+  /**
+   * 专门用于解析 Class 接口
+   */
   private final MapperAnnotationBuilder annotationBuilder;
   private final Method method;
 

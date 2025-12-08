@@ -88,6 +88,9 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     lookupConstructor = lookup;
   }
 
+  /**
+   * JDK 动态代理的入口
+   */
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
@@ -96,8 +99,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
         return method.invoke(this, args);
       }
 
-      // 获取一个 Invoker 它可以用于方法调用
+      // JDK 动态代理 proxy 就是 Proxy 对象，但是接口多态，这里用 Object 表示
+      // SqlSession 在这里我觉得可以看作 target 对象
       return cachedInvoker(method).invoke(proxy, method, args, sqlSession);
+
     } catch (Throwable t) {
       throw ExceptionUtil.unwrapThrowable(t);
     }
