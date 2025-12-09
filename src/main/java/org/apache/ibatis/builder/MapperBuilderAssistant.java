@@ -65,6 +65,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
    * Assistant 贮藏的 Cache
    */
   private Cache currentCache;
+
   private boolean unresolvedCacheRef; // issue #676
 
   public MapperBuilderAssistant(Configuration configuration, String resource) {
@@ -314,6 +315,14 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return parameterMap;
   }
 
+  /**
+   * 构建 ResultMap，如果开发者自己写了 ResultMap 的定义，那特别省心；开发者只写了一个类型，那么构造一个几乎是空的 ResultMap
+   *
+   * @param resultMap   开发者指定的结果映射字符串，可能用 ',' 可以分开得到更多 resultMap
+   * @param resultType  开发者指定的结果类型
+   * @param statementId 语句
+   * @return 如果使用 resultMap 有可能多个，如果用 resultType 永远只有 1 个
+   */
   private List<ResultMap> getStatementResultMaps(String resultMap, Class<?> resultType, String statementId) {
     resultMap = applyCurrentNamespace(resultMap, true);
 

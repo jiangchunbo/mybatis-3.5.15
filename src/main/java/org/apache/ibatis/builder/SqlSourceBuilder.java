@@ -42,6 +42,14 @@ public class SqlSourceBuilder extends BaseBuilder {
     super(configuration);
   }
 
+  /**
+   * 解析得到 {@link StaticSqlSource}
+   *
+   * @param originalSql          原始 SQL
+   * @param parameterType        开发者指定的参数类型，或者动态 SqlSource 执行时的参数类型
+   * @param additionalParameters 额外参数
+   * @return {@link StaticSqlSource}
+   */
   public SqlSource parse(String originalSql, Class<?> parameterType, Map<String, Object> additionalParameters) {
 
     // parser + handler 配合使用

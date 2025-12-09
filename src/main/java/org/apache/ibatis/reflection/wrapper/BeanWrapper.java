@@ -59,6 +59,9 @@ public class BeanWrapper extends BaseWrapper {
     }
   }
 
+  /**
+   * 返回标准化字符串
+   */
   @Override
   public String findProperty(String name, boolean useCamelCaseMapping) {
     return metaClass.findProperty(name, useCamelCaseMapping);

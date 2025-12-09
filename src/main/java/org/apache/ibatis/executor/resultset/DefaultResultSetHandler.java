@@ -469,6 +469,8 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     if (rowValue != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
       final MetaObject metaObject = configuration.newMetaObject(rowValue);
       boolean foundValues = this.useConstructorMappings;
+
+      // 如果应该使用自动映射，那么就用自动映射
       if (shouldApplyAutomaticMappings(resultMap, false)) {
         foundValues = applyAutomaticMappings(rsw, resultMap, metaObject, columnPrefix) || foundValues;
       }
@@ -588,6 +590,9 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
   }
 
+  /**
+   * 可以理解为属性注入，找到那些无法映射的属性注入。属性注入要不就是通过构造器，要不就是通过 resultMap result 元素
+   */
   private List<UnMappedColumnAutoMapping> createAutomaticMappings(ResultSetWrapper rsw, ResultMap resultMap,
                                                                   MetaObject metaObject, String columnPrefix) throws SQLException {
     // 构造 Key，检查缓存
@@ -597,14 +602,23 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     // 若未命中，则构造
     if (autoMapping == null) {
       autoMapping = new ArrayList<>();
+
+      // 获取 ResultSet 在 ResultMap 中无法映射的列名
+      // 如果只写 resultType，那么这里大概率会把所有 column 都是为 [未被映射的列]
       final List<String> unmappedColumnNames = rsw.getUnmappedColumnNames(resultMap, columnPrefix);
+
       // Remove the entry to release the memory
+      // 如果配置了构造器参数，那么需要删除这些列名 (因为可能通过构造器参数注入属性)
       List<String> mappedInConstructorAutoMapping = constructorAutoMappingColumns.remove(mapKey);
       if (mappedInConstructorAutoMapping != null) {
         unmappedColumnNames.removeAll(mappedInConstructorAutoMapping);
       }
+
+      // 访问每一个未被映射的列
       for (String columnName : unmappedColumnNames) {
         String propertyName = columnName;
+
+        // 有时候可能是因为 columnName 已经添加了 prefix，如果是这种情况，mybatis 应该能智能地帮我们检查出来
         if (columnPrefix != null && !columnPrefix.isEmpty()) {
           // When columnPrefix is specified,
           // ignore columns without the prefix.
@@ -613,19 +627,22 @@ public class DefaultResultSetHandler implements ResultSetHandler {
           }
           propertyName = columnName.substring(columnPrefix.length());
         }
+
+        // 返回标准化属性字符串
         final String property = metaObject.findProperty(propertyName, configuration.isMapUnderscoreToCamelCase());
         if (property != null && metaObject.hasSetter(property)) {
           if (resultMap.getMappedProperties().contains(property)) {
             continue;
           }
+
+          // 获取 POJO 属性类型，进而获取 TypeHandler
           final Class<?> propertyType = metaObject.getSetterType(property);
           if (typeHandlerRegistry.hasTypeHandler(propertyType, rsw.getJdbcType(columnName))) {
             final TypeHandler<?> typeHandler = rsw.getTypeHandler(propertyType, columnName);
-            autoMapping
-              .add(new UnMappedColumnAutoMapping(columnName, property, typeHandler, propertyType.isPrimitive()));
+            autoMapping.add(new UnMappedColumnAutoMapping(columnName, property, typeHandler, propertyType.isPrimitive()));
           } else {
-            configuration.getAutoMappingUnknownColumnBehavior().doAction(mappedStatement, columnName, property,
-              propertyType);
+            // 遇到无法处理的类型应该怎么做，警告吗，还是记录错误，等等
+            configuration.getAutoMappingUnknownColumnBehavior().doAction(mappedStatement, columnName, property, propertyType);
           }
         } else {
           configuration.getAutoMappingUnknownColumnBehavior().doAction(mappedStatement, columnName,

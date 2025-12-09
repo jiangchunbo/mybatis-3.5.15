@@ -59,7 +59,7 @@ public class DynamicSqlSource implements SqlSource {
     // 解析之后的返回值就是 StaticSqlSource
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
 
-    // 参数是 null 就是 Object ？？？！！！这是什么
+    // 参数是 null 就是 Object.class [后续就会使用 UnknownTypeHandler]
     Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
 
     // 解析得到一个 StaticSqlSource 静态的

@@ -350,6 +350,7 @@ public final class MappedStatement {
   }
 
   public BoundSql getBoundSql(Object parameterObject) {
+
     // 使用 sqlSource 得到 BoundSql。这里 sqlSource 只有两种情况：DynamicSqlSource 或者 RawSqlSource
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
 

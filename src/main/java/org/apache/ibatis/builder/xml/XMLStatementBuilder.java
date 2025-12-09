@@ -55,10 +55,14 @@ public class XMLStatementBuilder extends BaseBuilder {
     this.requiredDatabaseId = databaseId;
   }
 
+  /**
+   * 解析 SQL 脚本节点
+   */
   public void parseStatementNode() {
     String id = context.getStringAttribute("id");
     String databaseId = context.getStringAttribute("databaseId");
 
+    // 如果 databaseId 与当前环境不匹配，则不解析
     if (!databaseIdMatchesCurrent(id, databaseId, this.requiredDatabaseId)) {
       return;
     }
@@ -234,8 +238,6 @@ public class XMLStatementBuilder extends BaseBuilder {
     }
 
     // skip this statement if there is a previous one with a not null databaseId
-    // 之前已经存在这个语句了。怎么回事呢？可能是注解、XML 混合吧
-    // 如果之前没有配，那么优先使用之前的，先来先到
     MappedStatement previous = this.configuration.getMappedStatement(id, false); // issue #2
     return previous.getDatabaseId() == null;
   }

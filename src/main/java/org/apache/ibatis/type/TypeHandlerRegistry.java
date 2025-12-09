@@ -393,17 +393,26 @@ public final class TypeHandlerRegistry {
 
   // Only handler
 
+  /**
+   * 以 TypeHandler 实例对象的方式注册
+   */
   @SuppressWarnings("unchecked")
   public <T> void register(TypeHandler<T> typeHandler) {
     boolean mappedTypeFound = false;
+
+    // 1) 获取类型上的注解 @MappedTypes [显式指定]
     MappedTypes mappedTypes = typeHandler.getClass().getAnnotation(MappedTypes.class);
+
+    // 注册每个 javaType
     if (mappedTypes != null) {
       for (Class<?> handledType : mappedTypes.value()) {
         register(handledType, typeHandler);
         mappedTypeFound = true;
       }
     }
+
     // @since 3.1.0 - try to auto-discover the mapped type
+    // 2) 从 3.1.0 开始，可以通过实现 TypeReference 接口，让 mybatis 通过反射推测类型
     if (!mappedTypeFound && typeHandler instanceof TypeReference) {
       try {
         TypeReference<T> typeReference = (TypeReference<T>) typeHandler;
@@ -413,6 +422,8 @@ public final class TypeHandlerRegistry {
         // maybe users define the TypeReference with a different type and are not assignable, so just ignore it
       }
     }
+
+    // 3) 没有指定类型，就用 null
     if (!mappedTypeFound) {
       register((Class<T>) null, typeHandler);
     }
@@ -477,7 +488,9 @@ public final class TypeHandlerRegistry {
   // Only handler type
 
   /**
-   * 给定 typeHandler Class 对象，进行注册
+   * 注册 typeHandler
+   *
+   * @see TypeHandlerRegistry#register(Class, Class) 本质上要将 javaType 与 typeHandler 关联
    */
   public void register(Class<?> typeHandlerClass) {
     boolean mappedTypeFound = false;
@@ -486,11 +499,12 @@ public final class TypeHandlerRegistry {
     MappedTypes mappedTypes = typeHandlerClass.getAnnotation(MappedTypes.class);
     if (mappedTypes != null) {
 
-      // 多个 Java 类型
+      // 可以指定多个 javaType
       for (Class<?> javaTypeClass : mappedTypes.value()) {
 
         // 注册 Java 类型 -> TypeHandler
         register(javaTypeClass, typeHandlerClass);
+
         mappedTypeFound = true;
       }
     }

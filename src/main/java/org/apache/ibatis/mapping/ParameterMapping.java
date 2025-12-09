@@ -30,19 +30,28 @@ public class ParameterMapping {
   private Configuration configuration;
 
   private String property;
+
   private ParameterMode mode;
+
   private Class<?> javaType = Object.class;
+
   private JdbcType jdbcType;
+
   private Integer numericScale;
+
   private TypeHandler<?> typeHandler;
+
   private String resultMapId;
+
   private String jdbcTypeName;
+
   private String expression;
 
   private ParameterMapping() {
   }
 
   public static class Builder {
+
     private final ParameterMapping parameterMapping = new ParameterMapping();
 
     public Builder(Configuration configuration, String property, TypeHandler<?> typeHandler) {
@@ -226,4 +235,5 @@ public class ParameterMapping {
     sb.append('}');
     return sb.toString();
   }
+
 }

@@ -44,14 +44,20 @@ import org.apache.ibatis.type.UnknownTypeHandler;
 public class ResultSetWrapper {
 
   private final ResultSet resultSet;
+
   private final TypeHandlerRegistry typeHandlerRegistry;
+
   private final List<String> columnNames = new ArrayList<>();
 
   // 不是 Java 的类型，而是 JDBC 列的类型
   private final List<String> classNames = new ArrayList<>();
+
   private final List<JdbcType> jdbcTypes = new ArrayList<>();
+
   private final Map<String, Map<Class<?>, TypeHandler<?>>> typeHandlerMap = new HashMap<>();
+
   private final Map<String, Set<String>> mappedColumnNamesMap = new HashMap<>();
+
   private final Map<String, List<String>> unMappedColumnNamesMap = new HashMap<>();
 
   /**
@@ -102,11 +108,8 @@ public class ResultSetWrapper {
    * Gets the type handler to use when reading the result set. Tries to get from the TypeHandlerRegistry by searching
    * for the property type. If not found it gets the column JDBC type and tries to get a handler for it.
    *
-   * @param propertyType
-   *          the property type
-   * @param columnName
-   *          the column name
-   *
+   * @param propertyType the property type
+   * @param columnName   the column name
    * @return the type handler
    */
   public TypeHandler<?> getTypeHandler(Class<?> propertyType, String columnName) {
@@ -154,21 +157,23 @@ public class ResultSetWrapper {
     return null;
   }
 
-  private void loadMappedAndUnmappedColumnNames(ResultMap resultMap, String columnPrefix) throws SQLException {
+  /**
+   * 对于当前结果集来说 ResultMap 哪些 column 能够映射上，哪些不能映射上，它需要知道
+   *
+   * @param resultMap    某个映射方式
+   * @param columnPrefix 列名前缀
+   */
+  private void loadMappedAndUnmappedColumnNames(ResultMap resultMap, String columnPrefix) {
     Set<String> mappedColumnNames = new HashSet<>();
     List<String> unmappedColumnNames = new ArrayList<>();
 
-    // 如果前缀是 null，取 null
-    final String upperColumnPrefix = columnPrefix == null ? null : columnPrefix.toUpperCase(Locale.ENGLISH);
-    // 将每一列前面都加上 prefix，例如 user.id
+    // 给 ResultMap 每一列之前都加上 prefix (大写)
+    final String upperColumnPrefix = columnPrefix == null ? null : columnPrefix.toUpperCase(Locale.ENGLISH); // 大写
     final Set<String> mappedColumns = prependPrefixes(resultMap.getMappedColumns(), upperColumnPrefix);
 
-    // 遍历数据库的列，例如 user_id ?
+    // 分类出来 mappedColumnNames 和 unmappedColumnNames
     for (String columnName : columnNames) {
-      // 转换为 upper case 大写
-      final String upperColumnName = columnName.toUpperCase(Locale.ENGLISH);
-
-      // 注意这里使用的是 contains
+      final String upperColumnName = columnName.toUpperCase(Locale.ENGLISH); // 大写
       if (mappedColumns.contains(upperColumnName)) {
         mappedColumnNames.add(upperColumnName);
       } else {
@@ -191,14 +196,15 @@ public class ResultSetWrapper {
   }
 
   /**
-   * 获取无法映射的列名。这一层还是为了缓存
+   * 获取 resultMap 无法在当前 ResultSet 进行映射的 column name
+   *
+   * @param resultMap    映射方式
+   * @param columnPrefix 列名前缀
    */
   public List<String> getUnmappedColumnNames(ResultMap resultMap, String columnPrefix) throws SQLException {
     List<String> unMappedColumnNames = unMappedColumnNamesMap.get(getMapKey(resultMap, columnPrefix));
     if (unMappedColumnNames == null) {
-      // 缓存未命中，则构造
       loadMappedAndUnmappedColumnNames(resultMap, columnPrefix);
-      // 缓存构造完毕，读取缓存
       unMappedColumnNames = unMappedColumnNamesMap.get(getMapKey(resultMap, columnPrefix));
     }
     return unMappedColumnNames;
@@ -208,6 +214,9 @@ public class ResultSetWrapper {
     return resultMap.getId() + ":" + columnPrefix;
   }
 
+  /**
+   * 给每一列的名字之前都加上 prefix
+   */
   private Set<String> prependPrefixes(Set<String> columnNames, String prefix) {
     // 若空，跳过
     if (columnNames == null || columnNames.isEmpty() || prefix == null || prefix.length() == 0) {
