@@ -29,7 +29,10 @@ import org.apache.ibatis.scripting.defaults.RawSqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 该类用于处理 XML 格式的 SQL 语句，得到一个 SqlSource 对象
+ *
  * @author Eduardo Macarron
+ * @see XMLScriptBuilder
  */
 public class XMLLanguageDriver implements LanguageDriver {
 
@@ -46,10 +49,8 @@ public class XMLLanguageDriver implements LanguageDriver {
    */
   @Override
   public SqlSource createSqlSource(Configuration configuration, XNode script, Class<?> parameterType) {
-
     // 构建 builder，其实就是个 context，里面存储解析过程中产生的状态，比如 isDynamic
     XMLScriptBuilder builder = new XMLScriptBuilder(configuration, script, parameterType);
-
     // 解析 SQL 脚本，得到 DynamicSqlSource 或者 RawSqlSource
     return builder.parseScriptNode();
   }

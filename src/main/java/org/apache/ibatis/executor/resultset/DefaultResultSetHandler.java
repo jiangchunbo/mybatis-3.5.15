@@ -399,8 +399,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
       // 决策到底使用哪个 ResultMap，通常是 ResultMap 原对象返回
       ResultMap discriminatedResultMap = resolveDiscriminatedResultMap(resultSet, resultMap, null);
 
-      // 获取 行对象
+      // 创建 [行对象]
       Object rowValue = getRowValue(rsw, discriminatedResultMap, null);
+
+      // 将 [行对象] 存起来
       storeObject(resultHandler, resultContext, rowValue, parentMapping, resultSet);
     }
   }
@@ -414,10 +416,16 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
   }
 
+  /**
+   * 调用 {@link ResultHandler} 对结果进行处理
+   */
   @SuppressWarnings("unchecked" /* because ResultHandler<?> is always ResultHandler<Object> */)
   private void callResultHandler(ResultHandler<?> resultHandler, DefaultResultContext<Object> resultContext,
                                  Object rowValue) {
+    // 将 rowValue 封装到 resultContext 中
     resultContext.nextResultObject(rowValue);
+
+    // 这里直接处理 resultContext (内含 rowValue)
     ((ResultHandler<Object>) resultHandler).handleResult(resultContext);
   }
 
@@ -443,6 +451,15 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   // GET VALUE FROM ROW FOR SIMPLE RESULT MAP
   //
 
+  /**
+   * 方法名字叫 getRowValue，我更愿意称之为创建 row value
+   *
+   * @param rsw          {@link ResultSet 包装}
+   * @param resultMap    结果映射方式
+   * @param columnPrefix 字段前缀
+   * @return 行对象
+   * @throws SQLException 任何与 SQLException 有关的异常
+   */
   private Object getRowValue(ResultSetWrapper rsw, ResultMap resultMap, String columnPrefix) throws SQLException {
     final ResultLoaderMap lazyLoader = new ResultLoaderMap();
 
@@ -707,6 +724,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
    */
   private Object createResultObject(ResultSetWrapper rsw, ResultMap resultMap, ResultLoaderMap lazyLoader,
                                     String columnPrefix) throws SQLException {
+    // 重置构造器映射状态 (因为本行还不确定是否要走 "构造器映射")
     this.useConstructorMappings = false; // reset previous mapping result
 
     // 构造器参数类型 (需要推断构造器)
@@ -747,7 +765,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     final MetaClass metaType = MetaClass.forClass(resultType, reflectorFactory);
     final List<ResultMapping> constructorMappings = resultMap.getConstructorResultMappings();
 
-    // 是否有能够处理这种结果(标量)的 TypeHandler
+    // 1. 标量查询 → 直接用 TypeHandler 取值
     if (hasTypeHandlerForResultObject(rsw, resultType)) {
       return createPrimitiveResultObject(rsw, resultMap, columnPrefix);
     }

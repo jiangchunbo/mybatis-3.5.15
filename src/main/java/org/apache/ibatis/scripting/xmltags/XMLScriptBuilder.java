@@ -76,8 +76,9 @@ public class XMLScriptBuilder extends BaseBuilder {
     // 只需要解析 1 次，所有的状态都会出来
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
 
+    // 补充: 什么是 isDynamic? 出现 ${...} 或者任何动态标签
+
     SqlSource sqlSource;
-    // 什么是动态标签？出现 ${...} 或者任何动态标签
     if (isDynamic) {
       sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
     } else {
@@ -113,14 +114,12 @@ public class XMLScriptBuilder extends BaseBuilder {
         // 处理其他元素节点，只要出现合法的 XML 节点，就也认为是 dynamic
         String nodeName = child.getNode().getNodeName();
 
-        // 提前注册了好了，其他标签都是不合法的
+        // 策略。通过 node name 找到对应的 handler，然后处理对应的节点
         NodeHandler handler = nodeHandlerMap.get(nodeName);
         if (handler == null) {
           throw new BuilderException("Unknown element <" + nodeName + "> in SQL statement.");
         }
-
-        // 处理
-        handler.handleNode(child, contents);
+        handler.handleNode(child, contents); // 使用对应的 handler 处理节点，也能够快速判断是否有非法 tag
         isDynamic = true;
       }
     }
@@ -158,10 +157,14 @@ public class XMLScriptBuilder extends BaseBuilder {
     @Override
     public void handleNode(XNode nodeToHandle, List<SqlNode> targetContents) {
       MixedSqlNode mixedSqlNode = parseDynamicTags(nodeToHandle);
+
+      // 获取 node 上面的属性
       String prefix = nodeToHandle.getStringAttribute("prefix");
       String prefixOverrides = nodeToHandle.getStringAttribute("prefixOverrides");
       String suffix = nodeToHandle.getStringAttribute("suffix");
       String suffixOverrides = nodeToHandle.getStringAttribute("suffixOverrides");
+
+      // 创建 TrimSqlNode，里面的内容是 MixedSqlNode
       TrimSqlNode trim = new TrimSqlNode(configuration, mixedSqlNode, prefix, prefixOverrides, suffix, suffixOverrides);
       targetContents.add(trim);
     }

@@ -23,7 +23,7 @@ import org.apache.ibatis.session.ResultContext;
 import org.apache.ibatis.session.ResultHandler;
 
 /**
- * 一般的 ResultHandler
+ * 默认 ResultHandler，只是将每行结果对象存储起来，并不做任何处理、转换等。
  *
  * @author Clinton Begin
  */
@@ -37,11 +37,13 @@ public class DefaultResultHandler implements ResultHandler<Object> {
 
   @SuppressWarnings("unchecked")
   public DefaultResultHandler(ObjectFactory objectFactory) {
+    // 通过 ObjectFactory 创建一个 List 实例
     list = objectFactory.create(List.class);
   }
 
   @Override
   public void handleResult(ResultContext<?> context) {
+    // 通过 context.getResultObject 可以获取当前行结果对象
     list.add(context.getResultObject());
   }
 

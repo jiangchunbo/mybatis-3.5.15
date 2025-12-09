@@ -28,7 +28,9 @@ import org.apache.ibatis.type.SimpleTypeRegistry;
  * @author Clinton Begin
  */
 public class TextSqlNode implements SqlNode {
+
   private final String text;
+
   private final Pattern injectionFilter;
 
   public TextSqlNode(String text) {
@@ -44,8 +46,10 @@ public class TextSqlNode implements SqlNode {
    * 判断 script 是不是动态 sql
    */
   public boolean isDynamic() {
+    // parser + handler 组合
     DynamicCheckerTokenParser checker = new DynamicCheckerTokenParser();
-    GenericTokenParser parser = createParser(checker);
+    GenericTokenParser parser = createParser(checker); // open close token 是 ${}
+
     parser.parse(text);
     return checker.isDynamic();
   }
@@ -67,6 +71,7 @@ public class TextSqlNode implements SqlNode {
   private static class BindingTokenParser implements TokenHandler {
 
     private final DynamicContext context;
+
     private final Pattern injectionFilter;
 
     public BindingTokenParser(DynamicContext context, Pattern injectionFilter) {
@@ -93,6 +98,7 @@ public class TextSqlNode implements SqlNode {
         throw new ScriptingException("Invalid input. Please conform to regex" + injectionFilter.pattern());
       }
     }
+
   }
 
   private static class DynamicCheckerTokenParser implements TokenHandler {
@@ -109,9 +115,11 @@ public class TextSqlNode implements SqlNode {
 
     @Override
     public String handleToken(String content) {
+      // 遇到 token 就知道是动态的
       this.isDynamic = true;
       return null;
     }
+
   }
 
 }
