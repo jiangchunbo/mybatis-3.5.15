@@ -34,20 +34,28 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
- * 这个 StatementHandler 是所有工作的实现类的模板类
+ * 这个 {@link StatementHandler} 是所有工作的实现类的模板类
+ * <p>
+ * 该 handler 就是负责创建 {@link Statement} 和执行 {@link Statement}
  *
  * @author Clinton Begin
  */
 public abstract class BaseStatementHandler implements StatementHandler {
 
   protected final Configuration configuration;
+
   protected final ObjectFactory objectFactory;
+
   protected final TypeHandlerRegistry typeHandlerRegistry;
+
   protected final ResultSetHandler resultSetHandler;
+
   protected final ParameterHandler parameterHandler;
 
   protected final Executor executor;
+
   protected final MappedStatement mappedStatement;
+
   protected final RowBounds rowBounds;
 
   protected BoundSql boundSql;
@@ -135,7 +143,6 @@ public abstract class BaseStatementHandler implements StatementHandler {
     // 如果 transaction timeout 设置的更小，那么就用 transaction timeout
     StatementUtil.applyTransactionTimeout(stmt, queryTimeout, transactionTimeout);
   }
-
 
   /**
    * 这是一个如何设置 fetchSize 的策略

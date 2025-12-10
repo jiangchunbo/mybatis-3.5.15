@@ -56,7 +56,7 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   /**
-   * 解析 SQL 脚本节点
+   * 解析 SQL 脚本节点，
    */
   public void parseStatementNode() {
     String id = context.getStringAttribute("id");
@@ -67,6 +67,7 @@ public class XMLStatementBuilder extends BaseBuilder {
       return;
     }
 
+    // 支持解析 insert update delete select
     String nodeName = context.getNode().getNodeName();
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
@@ -84,7 +85,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     Class<?> parameterTypeClass = resolveClass(parameterType);
 
     String lang = context.getStringAttribute("lang");
-    LanguageDriver langDriver = getLanguageDriver(lang);
+    LanguageDriver langDriver = getLanguageDriver(lang); // lang 为 null 也有默认值兜底
 
     // Parse selectKey after includes and remove them.
     // 处理 <selectKey> 标签
