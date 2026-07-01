@@ -244,6 +244,8 @@ public class DefaultSqlSession implements SqlSession {
       executor.commit(isCommitOrRollbackRequired(force));
       dirty = false;
     } catch (Exception e) {
+      // 创建 PersistenceException 异常，包装底层异常
+      // ps: 底层异常可能是 BatchExecutorException
       throw ExceptionFactory.wrapException("Error committing transaction.  Cause: " + e, e);
     } finally {
       ErrorContext.instance().reset();

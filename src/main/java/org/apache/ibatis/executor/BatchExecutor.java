@@ -145,6 +145,8 @@ public class BatchExecutor extends BaseExecutor {
             message.append(" ").append(i)
                 .append(" prior sub executor(s) completed successfully, but will be rolled back.");
           }
+
+          // 将 JDBC API BatchUpdateException 包装到 BatchExecutorException
           throw new BatchExecutorException(message.toString(), e, results, batchResult);
         }
         results.add(batchResult);
